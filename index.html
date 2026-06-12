@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    main{
+        align-items: center;
+        display: flex;
+        height: 100vh;
+        justify-content: center
+    }
+    #takematsu{
+        display: flex;
+        background-color: red;
+        width: 100px;
+        height: 100px;
+        justify-content: center;
+        align-items: center
+    }
+    .flutuando {
+        animation: flutuando-animacao 2s ease-in-out infinite;
+    }
+    .bloco{
+        background-color: yellow;
+        width: 20px;
+        height: 20px;
+        cursor: grab;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    @keyframes flutuando-animacao {
+        0% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-15px); 
+        }
+        100% {
+            transform: translateY(0);
+        }
+    }
+</style>
+<body>
+    
+    <main>
+        <div class="zona-destino" id="takematsu">
+        </div>
+    </main>
+
+
+
+    <div id="comida" draggable="true"><div class="bloco"></div></div>
+</body>
+<script src="script.js"></script>
+</html>
