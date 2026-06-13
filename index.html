@@ -6,6 +6,15 @@
     <title>Document</title>
 </head>
 <style>
+    *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    html, body {
+        height: 100%;
+        overflow: hidden;
+    }
     main{
         align-items: center;
         display: flex;
@@ -43,7 +52,6 @@
         gap: 5px;
     }
     #barra-fome-container span {
-        color: white;
         font-family: sans-serif;
         font-size: 14px;
     }
@@ -73,24 +81,32 @@
             transform: translateY(0);
         }
     }
+
+    #sushi{
+        width: 80px;
+        height: 80px;
+    }
+
+    #comida {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        cursor: grab;
+    }
 </style>
 <body>
     
-
-
     <main>
         <div class="zona-destino" id="takematsu">
         </div>
     </main>
-
     <div id="barra-fome-container">
-        <span style="color: black;" >Fome do Takematsu</span>
+        <span style="color: black;">Fome do Takematsu</span>
         <div id="barra-fome-fundo">
             <div id="barra-fome"></div>
         </div>
     </div>
-
-    <div id="comida" draggable="true"><div class="bloco"></div></div>
+    <div id="comida" draggable="true"><img id="sushi" src="imgs\a7cf15d5-9ad9-4aef-b7c1-e73608b99c66-removebg-preview.png" alt="sushi para o takematsu"></div>
 </body>
 <script src="script.js"></script>
 </html>
