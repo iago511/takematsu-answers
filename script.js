@@ -22,6 +22,7 @@ takematsu.addEventListener('drop', (evento) => {
 
 async function estapear(){
     if (estaEstapeando) return;
+    takematsu.classList.remove('flutuando');
     estaEstapeando = true;
     takematsu.style.backgroundColor= "blue";
     console.log("Iniciou...");
