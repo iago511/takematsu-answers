@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Takematsu</title>
 </head>
 <style>
     *, *::before, *::after {
@@ -14,6 +14,17 @@
     html, body {
         height: 100%;
         overflow: hidden;
+    }
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0,0,0,0);
+        white-space: nowrap;
+        border: 0;
     }
     main{
         align-items: center;
@@ -31,15 +42,6 @@
     }
     .flutuando {
         animation: flutuando-animacao 2s ease-in-out infinite;
-    }
-    .bloco{
-        background-color: yellow;
-        width: 20px;
-        height: 20px;
-        cursor: grab;
-        display: flex;
-        align-items: center;
-        justify-content: center;
     }
     #barra-fome-container {
         position: fixed;
@@ -69,44 +71,258 @@
         border-radius: 10px;
         transition: width 0.3s ease, background-color 0.3s ease;
     }
-    
-    @keyframes flutuando-animacao {
-        0% {
-            transform: translateY(0);
-        }
-        50% {
-            transform: translateY(-15px); 
-        }
-        100% {
-            transform: translateY(0);
-        }
-    }
-
     #sushi{
         width: 80px;
         height: 80px;
     }
-
     #comida {
         position: fixed;
         bottom: 20px;
         left: 20px;
         cursor: grab;
     }
+    #btn-fixed-action {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: #222;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 52px;
+        height: 52px;
+        font-size: 22px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+    }
+    #btn-fixed-action:focus {
+        outline: 3px solid #fff;
+        outline-offset: 2px;
+    }
+    .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background-color: rgba(0,0,0,0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 200;
+    }
+    .modal-content-box {
+        background: #fff;
+        border-radius: 12px;
+        padding: 24px;
+        width: 340px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    .modal-title {
+        font-family: sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+    .grid-scroll-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        overflow-y: auto;
+        max-height: 340px;
+    }
+    .grid-card-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 12px 8px;
+        border: 2px solid #ddd;
+        border-radius: 10px;
+        background: #f5f5f5;
+        cursor: pointer;
+        font-family: sans-serif;
+        font-size: 0.8rem;
+        text-align: center;
+        transition: background 0.2s, border-color 0.2s;
+    }
+    .grid-card-btn:focus {
+        outline: 3px solid #222;
+        outline-offset: 2px;
+    }
+    .grid-card-btn.is-active {
+        background: #222;
+        color: #fff;
+        border-color: #222;
+    }
+    .card-icon {
+        font-size: 1.3rem;
+    }
+    .card-color-input {
+        width: 32px;
+        height: 24px;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        background: none;
+    }
+    .modal-buttons-container {
+        display: flex;
+        justify-content: flex-end;
+    }
+    .btn-secondary {
+        background: #222;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 20px;
+        font-family: sans-serif;
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+    .btn-secondary:focus {
+        outline: 3px solid #222;
+        outline-offset: 2px;
+    }
+
+    @keyframes flutuando-animacao {
+        0% { transform: translateY(0); }
+        50% { transform: translateY(-15px); }
+        100% { transform: translateY(0); }
+    }
 </style>
 <body>
-    
-    <main>
-        <div class="zona-destino" id="takematsu">
-        </div>
+
+    <main role="main" aria-label="Área principal do jogo">
+        <div
+            class="zona-destino personagem"
+            id="takematsu"
+            role="button"
+            tabindex="0"
+            aria-label="Takematsu, clique para interagir"
+            aria-describedby="barra-fome-label"
+        ></div>
     </main>
-    <div id="barra-fome-container">
-        <span style="color: black;">Fome do Takematsu</span>
-        <div id="barra-fome-fundo">
-            <div id="barra-fome"></div>
+
+    <aside
+        id="barra-fome-container"
+        class="hud hud-fome"
+        role="status"
+        aria-live="polite"
+        aria-label="Status de fome do Takematsu"
+    >
+        <span id="barra-fome-label" class="hud-titulo text-content" style="color: black;">Fome do Takematsu</span>
+        <div
+            id="barra-fome-fundo"
+            class="barra-container"
+            role="progressbar"
+            aria-valuenow="100"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-labelledby="barra-fome-label"
+        >
+            <div id="barra-fome" class="barra-preenchimento"></div>
+        </div>
+    </aside>
+
+    <div
+        id="comida"
+        class="item-arrastavel alimento"
+        draggable="true"
+        role="button"
+        tabindex="0"
+        aria-label="Sushi, arraste até o Takematsu para alimentá-lo"
+        aria-grabbed="false"
+    >
+        <img
+            id="sushi"
+            class="alimento-imagem"
+            src="imgs\a7cf15d5-9ad9-4aef-b7c1-e73608b99c66-removebg-preview.png"
+            alt="Sushi para alimentar o Takematsu"
+            aria-hidden="true"
+        >
+    </div>
+
+    <button
+        type="button"
+        id="btn-fixed-action"
+        aria-label="Abrir menu de acessibilidade"
+        aria-haspopup="dialog"
+    >
+        ♿
+    </button>
+
+    <div id="modal-overlay" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-box-title" aria-describedby="modal-box-desc" style="display: none;">
+
+        <div id="modal-box" class="modal-content-box a11y-menu-box">
+
+            <div tabindex="0" class="sr-only" id="modal-focus-start"></div>
+
+            <h2 id="modal-box-title" class="modal-title">Menu de Acessibilidade</h2>
+            <p id="modal-box-desc" class="sr-only">Selecione as opções abaixo para customizar sua experiência de navegação no site.</p>
+
+            <div id="a11y-grid-container" class="grid-scroll-container">
+
+                <button type="button" id="btn-inc-font" class="grid-card-btn">
+                    <span class="card-icon" aria-hidden="true">A↑</span>
+                    <span class="card-label">Aumentar Fonte</span>
+                </button>
+
+                <button type="button" id="btn-dec-font" class="grid-card-btn">
+                    <span class="card-icon" aria-hidden="true">A↓</span>
+                    <span class="card-label">Diminuir Fonte</span>
+                </button>
+
+                <button type="button" id="btn-toggle-images" class="grid-card-btn">
+                    <span class="card-icon" aria-hidden="true">🚫🖼️</span>
+                    <span class="card-label">Esconder Imagens</span>
+                </button>
+
+                <label for="input-text-color" id="label-text-color" class="grid-card-btn label-input-card">
+                    <span class="card-icon" aria-hidden="true">🎨✍️</span>
+                    <span class="card-label">Cor do Texto</span>
+                    <input type="color" id="input-text-color" class="card-color-input" aria-label="Escolher cor do texto do site">
+                </label>
+
+                <button type="button" id="btn-low-sat" class="grid-card-btn">
+                    <span class="card-icon" aria-hidden="true">💧-</span>
+                    <span class="card-label">Baixa Saturação</span>
+                </button>
+
+                <button type="button" id="btn-high-sat" class="grid-card-btn">
+                    <span class="card-icon" aria-hidden="true">💧+</span>
+                    <span class="card-label">Alta Saturação</span>
+                </button>
+
+                <button type="button" id="btn-inc-spacing" class="grid-card-btn">
+                    <span class="card-icon" aria-hidden="true">←A→</span>
+                    <span class="card-label">Aumentar Espaçamento</span>
+                </button>
+
+                <button type="button" id="btn-dec-spacing" class="grid-card-btn">
+                    <span class="card-icon" aria-hidden="true">→A←</span>
+                    <span class="card-label">Diminuir Espaçamento</span>
+                </button>
+
+                <label for="input-bg-color" id="label-bg-color" class="grid-card-btn label-input-card">
+                    <span class="card-icon" aria-hidden="true">🖼️🎨</span>
+                    <span class="card-label">Cor do Fundo</span>
+                    <input type="color" id="input-bg-color" class="card-color-input" aria-label="Escolher cor de fundo do site">
+                </label>
+
+            </div>
+
+            <div id="modal-actions" class="modal-buttons-container">
+                <button type="button" id="btn-modal-cancel" class="btn-secondary">Fechar</button>
+            </div>
+            <div tabindex="0" class="sr-only" id="modal-focus-end"></div>
         </div>
     </div>
-    <div id="comida" draggable="true"><img id="sushi" src="imgs\a7cf15d5-9ad9-4aef-b7c1-e73608b99c66-removebg-preview.png" alt="sushi para o takematsu"></div>
+
 </body>
 <script src="script.js"></script>
+<script src="scriptAcessibilidade.js"></script>
 </html>
