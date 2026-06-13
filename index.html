@@ -9,8 +9,10 @@
     main{
         align-items: center;
         display: flex;
+        flex-direction: column;
         height: 100vh;
-        justify-content: center
+        justify-content: center;
+        gap: 20px;
     }
     #takematsu{
         display: flex;
@@ -61,6 +63,11 @@
         border-radius: 10px;
         transition: width 0.3s ease, background-color 0.3s ease;
     }
+    #answer, #question {
+        background-color: blue;
+        width: 50px;
+        height: 20px;
+    }
     
     @keyframes flutuando-animacao {
         0% {
@@ -79,8 +86,10 @@
 
 
     <main>
+        <div id="answer"></div>
         <div class="zona-destino" id="takematsu">
         </div>
+        <div id="question"></div>
     </main>
 
     <div id="barra-fome-container">
