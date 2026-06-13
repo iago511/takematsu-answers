@@ -86,7 +86,6 @@ function toggle_imagens() {
         });
         return;
     }
- 
     document.querySelectorAll('img').forEach(imagem => {
         const pai = imagem.parentNode;
         const novoTexto = document.createElement('span');
