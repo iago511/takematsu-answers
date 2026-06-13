@@ -66,31 +66,43 @@ function diminui_fonte() {
         console.log("Normalizando fonte");
     }
 }
-
 function toggle_imagens() {
-    const imagem = document.getElementById('img-content');
-    const textoSubstituto = document.getElementById('texto-substituto');
-
-    if (imagem) {
+    const imagensAtivas = document.querySelectorAll('img[data-substituivel]');
+    const textosSubstitutos = document.querySelectorAll('span[data-substituto]');
+ 
+    if (textosSubstitutos.length > 0) {
+        textosSubstitutos.forEach(textoSubstituto => {
+            const pai = textoSubstituto.parentNode;
+            const novaImagem = document.createElement('img');
+            novaImagem.src = textoSubstituto.dataset.src;
+            novaImagem.alt = textoSubstituto.dataset.alt;
+            novaImagem.className = textoSubstituto.dataset.classe;
+            if (textoSubstituto.dataset.id) novaImagem.id = textoSubstituto.dataset.id;
+            if (textoSubstituto.dataset.ariaHidden) novaImagem.setAttribute("aria-hidden", textoSubstituto.dataset.ariaHidden);
+            if (textoSubstituto.dataset.width) novaImagem.style.width = textoSubstituto.dataset.width;
+            if (textoSubstituto.dataset.height) novaImagem.style.height = textoSubstituto.dataset.height;
+            novaImagem.setAttribute("data-substituivel", "true");
+            pai.replaceChild(novaImagem, textoSubstituto);
+        });
+        return;
+    }
+    document.querySelectorAll('img').forEach(imagem => {
         const pai = imagem.parentNode;
         const novoTexto = document.createElement('span');
-
-        novoTexto.id = 'texto-substituto';
-        novoTexto.innerHTML = `<strong>${imagem.title}</strong>: ${imagem.alt}`;
+        novoTexto.setAttribute("data-substituto", "true");
+        novoTexto.innerHTML = `<strong>${imagem.alt || "Imagem"}</strong>`;
         novoTexto.dataset.src = imagem.src;
         novoTexto.dataset.alt = imagem.alt;
-        novoTexto.dataset.title = imagem.title;
+        novoTexto.dataset.classe = imagem.className;
+        novoTexto.dataset.id = imagem.id;
+        novoTexto.dataset.ariaHidden = imagem.getAttribute("aria-hidden") || "";
+        novoTexto.dataset.width = imagem.style.width;
+        novoTexto.dataset.height = imagem.style.height;
+        novoTexto.style.fontFamily = "sans-serif";
+        novoTexto.style.fontSize = "0.7rem";
+        novoTexto.style.color = "#000";
         pai.replaceChild(novoTexto, imagem);
-    }
-    else if (textoSubstituto) {
-        const pai = textoSubstituto.parentNode;
-        const novaImagem = document.createElement('img');
-        novaImagem.id = 'img-content';
-        novaImagem.src = textoSubstituto.dataset.src;
-        novaImagem.alt = textoSubstituto.dataset.alt;
-        novaImagem.title = textoSubstituto.dataset.title;
-        pai.replaceChild(novaImagem, textoSubstituto);
-    }
+    });
 }
 
 function mudar_cor_texto() {
