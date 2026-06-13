@@ -95,18 +95,65 @@
     }
 </style>
 <body>
-    
-    <main>
-        <div class="zona-destino" id="takematsu">
+
+    <main role="main" aria-label="Área principal do jogo">
+        <div
+            class="zona-destino personagem"
+            id="takematsu"
+            role="button"
+            tabindex="0"
+            aria-label="Takematsu, clique para interagir"
+            aria-describedby="barra-fome-label"
+        >
         </div>
     </main>
-    <div id="barra-fome-container">
-        <span style="color: black;">Fome do Takematsu</span>
-        <div id="barra-fome-fundo">
-            <div id="barra-fome"></div>
+
+    <aside
+        id="barra-fome-container"
+        class="hud hud-fome"
+        role="status"
+        aria-live="polite"
+        aria-label="Status de fome do Takematsu"
+    >
+        <span
+            id="barra-fome-label"
+            class="hud-titulo"
+            style="color: black;"
+        >
+            Fome do Takematsu
+        </span>
+        <div
+            id="barra-fome-fundo"
+            class="barra-container"
+            role="progressbar"
+            aria-valuenow="100"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-labelledby="barra-fome-label"
+        >
+            <div id="barra-fome" class="barra-preenchimento"></div>
         </div>
+    </aside>
+
+    <div
+        id="comida"
+        class="item-arrastavel alimento"
+        draggable="true"
+        role="button"
+        tabindex="0"
+        aria-label="Sushi, arraste até o Takematsu para alimentá-lo"
+        aria-grabbed="false"
+    >
+        <img
+            id="sushi"
+            class="alimento-imagem"
+            src="imgs\a7cf15d5-9ad9-4aef-b7c1-e73608b99c66-removebg-preview.png"
+            alt="Sushi para alimentar o Takematsu"
+            aria-hidden="true"
+        >
     </div>
-    <div id="comida" draggable="true"><img id="sushi" src="imgs\a7cf15d5-9ad9-4aef-b7c1-e73608b99c66-removebg-preview.png" alt="sushi para o takematsu"></div>
+
 </body>
 <script src="script.js"></script>
+<script src="scriptAcessibilidade.js"></script>
 </html>
