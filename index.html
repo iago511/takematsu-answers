@@ -294,7 +294,7 @@
       aria-label="Abrir menu de acessibilidade"
       aria-haspopup="dialog"
     >
-      ♿
+      <i data-lucide="accessibility" aria-hidden="true"></i>
     </button>
 
     <div
@@ -317,70 +317,53 @@
 
         <div id="a11y-grid-container" class="grid-scroll-container">
           <button type="button" id="btn-inc-font" class="grid-card-btn">
-            <span class="card-icon" aria-hidden="true">A↑</span>
+            <span class="card-icon" aria-hidden="true"><i data-lucide="a-arrow-up"></i></span>
             <span class="card-label">Aumentar Fonte</span>
           </button>
 
-          <button type="button" id="btn-dec-font" class="grid-card-btn">
-            <span class="card-icon" aria-hidden="true">A↓</span>
-            <span class="card-label">Diminuir Fonte</span>
-          </button>
+                <button type="button" id="btn-dec-font" class="grid-card-btn">
+                    <span class="card-icon" aria-hidden="true"><i data-lucide="a-arrow-down"></i></span>
+                    <span class="card-label">Diminuir Fonte</span>
+                </button>
 
-          <button type="button" id="btn-toggle-images" class="grid-card-btn">
-            <span class="card-icon" aria-hidden="true">🚫🖼️</span>
-            <span class="card-label">Esconder Imagens</span>
-          </button>
+                <button type="button" id="btn-toggle-images" class="grid-card-btn">
+                    <span class="card-icon" aria-hidden="true"><i data-lucide="image-off"></i></span>
+                    <span class="card-label">Esconder Imagens</span>
+                </button>
 
-          <label
-            for="input-text-color"
-            id="label-text-color"
-            class="grid-card-btn label-input-card"
-          >
-            <span class="card-icon" aria-hidden="true">🎨✍️</span>
-            <span class="card-label">Cor do Texto</span>
-            <input
-              type="color"
-              id="input-text-color"
-              class="card-color-input"
-              aria-label="Escolher cor do texto do site"
-            />
-          </label>
+                <label for="input-text-color" id="label-text-color" class="grid-card-btn label-input-card">
+                    <span class="card-icon" aria-hidden="true"><i data-lucide="baseline"></i></span>
+                    <span class="card-label">Cor do Texto</span>
+                    <input type="color" id="input-text-color" class="card-color-input" aria-label="Escolher cor do texto do site">
+                </label>
 
           <button type="button" id="btn-low-sat" class="grid-card-btn">
-            <span class="card-icon" aria-hidden="true">💧-</span>
+            <span class="card-icon" aria-hidden="true"><i data-lucide="droplet-off"></i></span>
             <span class="card-label">Baixa Saturação</span>
           </button>
 
-          <button type="button" id="btn-high-sat" class="grid-card-btn">
-            <span class="card-icon" aria-hidden="true">💧+</span>
-            <span class="card-label">Alta Saturação</span>
-          </button>
+                <button type="button" id="btn-high-sat" class="grid-card-btn">
+                    <span class="card-icon" aria-hidden="true"><i data-lucide="droplets"></i></span>
+                    <span class="card-label">Alta Saturação</span>
+                </button>
 
-          <button type="button" id="btn-inc-spacing" class="grid-card-btn">
-            <span class="card-icon" aria-hidden="true">←A→</span>
-            <span class="card-label">Aumentar Espaçamento</span>
-          </button>
+                <button type="button" id="btn-inc-spacing" class="grid-card-btn">
+                    <span class="card-icon" aria-hidden="true"><i data-lucide="unfold-horizontal"></i></span>
+                    <span class="card-label">Aumentar Espaçamento</span>
+                </button>
 
-          <button type="button" id="btn-dec-spacing" class="grid-card-btn">
-            <span class="card-icon" aria-hidden="true">→A←</span>
-            <span class="card-label">Diminuir Espaçamento</span>
-          </button>
+                <button type="button" id="btn-dec-spacing" class="grid-card-btn">
+                    <span class="card-icon" aria-hidden="true"><i data-lucide="fold-horizontal"></i></span>
+                    <span class="card-label">Diminuir Espaçamento</span>
+                </button>
 
-          <label
-            for="input-bg-color"
-            id="label-bg-color"
-            class="grid-card-btn label-input-card"
-          >
-            <span class="card-icon" aria-hidden="true">🖼️🎨</span>
-            <span class="card-label">Cor do Fundo</span>
-            <input
-              type="color"
-              id="input-bg-color"
-              class="card-color-input"
-              aria-label="Escolher cor de fundo do site"
-            />
-          </label>
-        </div>
+                <label for="input-bg-color" id="label-bg-color" class="grid-card-btn label-input-card">
+                    <span class="card-icon" aria-hidden="true"><i data-lucide="paint-bucket"></i></span>
+                    <span class="card-label">Cor do Fundo</span>
+                    <input type="color" id="input-bg-color" class="card-color-input" aria-label="Escolher cor de fundo do site">
+                </label>
+
+            </div>
 
         <div id="modal-actions" class="modal-buttons-container">
           <button type="button" id="btn-modal-cancel" class="btn-secondary">
@@ -390,7 +373,10 @@
         <div tabindex="0" class="sr-only" id="modal-focus-end"></div>
       </div>
     </div>
-  </body>
-  <script src="script.js"></script>
-  <script src="scriptAcessibilidade.js"></script>
+
+</body>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>lucide.createIcons();</script>
+<script src="script.js"></script>
+<script src="scriptAcessibilidade.js"></script>
 </html>
