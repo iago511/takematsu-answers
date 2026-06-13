@@ -68,27 +68,30 @@ function diminui_fonte() {
 }
 
 function toggle_imagens() {
-    const imagem = document.getElementById('img-content');
+    const imagem = document.getElementById('sushi');
     const textoSubstituto = document.getElementById('texto-substituto');
-
+ 
     if (imagem) {
         const pai = imagem.parentNode;
         const novoTexto = document.createElement('span');
-
         novoTexto.id = 'texto-substituto';
-        novoTexto.innerHTML = `<strong>${imagem.title}</strong>: ${imagem.alt}`;
+        novoTexto.innerHTML = `<strong>Alimento</strong>: ${imagem.alt}`;
         novoTexto.dataset.src = imagem.src;
         novoTexto.dataset.alt = imagem.alt;
-        novoTexto.dataset.title = imagem.title;
+        novoTexto.style.fontFamily = "sans-serif";
+        novoTexto.style.fontSize = "0.7rem";
+        novoTexto.style.color = "#000";
         pai.replaceChild(novoTexto, imagem);
-    }
-    else if (textoSubstituto) {
+    } else if (textoSubstituto) {
         const pai = textoSubstituto.parentNode;
         const novaImagem = document.createElement('img');
-        novaImagem.id = 'img-content';
+        novaImagem.id = 'sushi';
+        novaImagem.className = 'alimento-imagem';
         novaImagem.src = textoSubstituto.dataset.src;
         novaImagem.alt = textoSubstituto.dataset.alt;
-        novaImagem.title = textoSubstituto.dataset.title;
+        novaImagem.setAttribute("aria-hidden", "true");
+        novaImagem.style.width = "80px";
+        novaImagem.style.height = "80px";
         pai.replaceChild(novaImagem, textoSubstituto);
     }
 }
