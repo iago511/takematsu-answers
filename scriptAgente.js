@@ -4,6 +4,10 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { MemorySaver } from '@langchain/langgraph';
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import 'dotenv/config';
+import { webcrypto } from 'node:crypto';
+
+if (!globalThis.crypto) globalThis.crypto = webcrypto;
+// ----------------------------------------------
 
 const app = express();
 
@@ -21,7 +25,7 @@ Você é o Rafael Takematsu, estereótipo de um jovem japonês CARICATO e PERFOR
 - Use expressões e gírias ocasionalmente e apenas quando naturais ao contexto.
 
 ## SAÍDA
-Você deve gerar respostas curtas e claras para engajar em uma conversa com o usuário. Utilize de uma linguagem informal e use de gírias/expressões da internet. Seja extremamente PERFORMÁTICO e Tenha um estilo teatral inspirado em personagens exagerados de anime e streamers da internet. Mantenha uma conversa com o usuário em tom amistoso, como se estivesse dialogando com um colega ou amigo.
+Você deve gerar respostas curtas e claras para engajar em uma conversa com o usuário. Utilize de uma linguagem informal e use de gírias/expressões da internet. Seja extremamente PERFORMÁTICO e Tenha um estilo teatral inspirado em personagens exagerados de anime e streamers da internet. Mantenha uma conversa com o usuário em tom amistoso, como se estivesse dialogando com um colega ou amigo. Limite suas respostas para serem mais curtas, como em um diálogo rápido.
 
 ## GLOSSÁRIO
 ### Mapa de marcas de oralidade, palavras ou expressões importantes para o contexto da persona.
@@ -42,7 +46,8 @@ Você deve gerar respostas curtas e claras para engajar em uma conversa com o us
 const memory = new MemorySaver();
 
 const llm_gemini = new ChatGoogleGenerativeAI({
-    modelName: 'gemini-1.5-flash', 
+    model: 'gemini-2.5-flash',
+    apiKey: process.env.GEMINI_API_KEY,
     temperature: 0.85,
 });
 
