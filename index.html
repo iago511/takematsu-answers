@@ -4,379 +4,663 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Takematsu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&family=Cinzel:wght@600&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg-sky: #0a0010;
+        --accent: #9b59b6;
+        --accent2: #e040fb;
+        --ink: #e8d5f5;
+        --panel-bg: rgba(20, 5, 35, 0.92);
+        --panel-border: rgba(155, 89, 182, 0.35);
+        --bar-full: #ab47bc;
+        --bar-low: #e040fb;
+        --bar-mid: #7b1fa2;
+      }
+
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; overflow: hidden; font-family: 'M PLUS Rounded 1c', sans-serif; color-scheme: dark; }
+
+      .sr-only {
+        position: absolute; width: 1px; height: 1px; padding: 0;
+        margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+        white-space: nowrap; border: 0;
+      }
+
+      /* ── BACKGROUND ── */
+      body {
+        background: linear-gradient(180deg, #030008 0%, #0d0020 30%, #14002e 60%, #0a0018 80%, #050010 100%);
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Stars background */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image:
+          radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.6) 0%, transparent 100%),
+          radial-gradient(1px 1px at 25% 40%, rgba(224,64,251,0.5) 0%, transparent 100%),
+          radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.5) 0%, transparent 100%),
+          radial-gradient(1px 1px at 75% 25%, rgba(255,255,255,0.4) 0%, transparent 100%),
+          radial-gradient(1px 1px at 90% 5%,  rgba(224,64,251,0.4) 0%, transparent 100%),
+          radial-gradient(2px 2px at 15% 80%, rgba(155,89,182,0.3) 0%, transparent 100%),
+          radial-gradient(1px 1px at 35% 70%, rgba(255,255,255,0.3) 0%, transparent 100%),
+          radial-gradient(1px 1px at 60% 55%, rgba(224,64,251,0.3) 0%, transparent 100%),
+          radial-gradient(2px 2px at 80% 65%, rgba(255,255,255,0.25) 0%, transparent 100%),
+          radial-gradient(1px 1px at 45% 90%, rgba(155,89,182,0.4) 0%, transparent 100%);
+        pointer-events: none;
+        z-index: 0;
+        animation: twinkle 4s ease-in-out infinite alternate;
+      }
+
+      @keyframes twinkle {
+        from { opacity: 0.6; }
+        to { opacity: 1; }
+      }
+
+      body::after {
+        content: '';
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        height: 35%;
+        background-image:
+          repeating-linear-gradient(90deg, transparent, transparent 79px, rgba(155,89,182,0.12) 80px),
+          repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(155,89,182,0.12) 40px);
+        background: linear-gradient(180deg, transparent 0%, rgba(60,0,90,0.4) 100%);
+        border-top: 1px solid rgba(155,89,182,0.2);
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* Mystic orbs drifting */
+      .cloud {
+        position: fixed;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(224,64,251,0.18) 0%, rgba(155,89,182,0.08) 60%, transparent 100%);
+        animation: drift-orb linear infinite;
+        pointer-events: none;
+        z-index: 0;
+        filter: blur(20px);
+      }
+      .cloud::before, .cloud::after { display: none; }
+      .cloud-1 { width: 200px; height: 120px; top: 8%; animation-duration: 55s; }
+      .cloud-2 { width: 150px; height: 90px; top: 30%; animation-duration: 70s; animation-delay: -20s; opacity: 0.7; }
+      .cloud-3 { width: 260px; height: 140px; top: 5%; animation-duration: 80s; animation-delay: -40s; opacity: 0.5; }
+      @keyframes drift-orb { from { left: -300px; } to { left: 110%; } }
+
+      /* Torii */
+      .torii {
+        position: fixed;
+        bottom: 39%; right: 6%;
+        width: 90px; height: 80px;
+        pointer-events: none;
+        opacity: 0.4; z-index: 0;
+      }
+      .torii::before {
+        content: '';
+        position: absolute;
+        bottom: 0; left: 50%; transform: translateX(-50%);
+        width: 6px; height: 100%;
+        background: var(--accent);
+        box-shadow: 60px 0 0 var(--accent), 0 0 12px var(--accent), 60px 0 12px var(--accent);
+      }
+      .torii::after {
+        content: '';
+        position: absolute;
+        top: 0; left: -4px; right: -4px; height: 8px;
+        background: var(--accent);
+        border-radius: 2px 2px 0 0;
+        box-shadow: 0 0 14px var(--accent);
+      }
+
+      /* ── HUD topo ── */
+      #hud {
+        position: fixed;
+        top: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        background: var(--panel-bg);
+        border: 1.5px solid var(--panel-border);
+        border-radius: 16px;
+        padding: 10px 20px;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 2px 20px rgba(155,89,182,0.25), 0 0 40px rgba(224,64,251,0.1);
+        z-index: 10;
+        min-width: 240px;
+      }
+      .stat-row { display: flex; align-items: center; gap: 10px; }
+      .stat-icon { font-size: 1rem; width: 20px; text-align: center; filter: drop-shadow(0 0 4px var(--accent)); }
+      .stat-label { font-size: 0.7rem; font-weight: 700; color: var(--ink); opacity: 0.75; text-transform: uppercase; letter-spacing: 0.04em; width: 54px; }
+      .bar-track {
+        flex: 1; height: 10px;
+        background: rgba(30,0,50,0.8); border-radius: 6px; overflow: hidden;
+        border: 1px solid rgba(155,89,182,0.2);
+      }
+      .bar-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease, background 0.4s ease; box-shadow: 0 0 8px currentColor; }
+      #bar-fome-fill { background: var(--bar-full); }
+      #bar-sujo-fill { background: #ce93d8; }
+
+      /* ── STAGE CENTRAL (personagem) ── */
+      main {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+      }
+
+      #takematsu-wrap {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+        margin-top: 0;
+        margin-bottom: 15vh; /* Empurrado um pouco pra cima pro chat não cobrir */
+      }
+
+      #takematsu-img {
+        width: 200px;
+        height: auto;
+        filter: drop-shadow(0 8px 18px rgba(0,0,0,0.18));
+        transition: transform 0.15s ease;
+      }
+      #takematsu-wrap:hover #takematsu-img { transform: scale(1.04) translateY(-4px); }
+
+      @keyframes slap-shake {
+        0%   { transform: translateX(0) rotate(0deg); }
+        20%  { transform: translateX(-12px) rotate(-4deg); }
+        40%  { transform: translateX(10px)  rotate(3deg); }
+        60%  { transform: translateX(-8px)  rotate(-2deg); }
+        80%  { transform: translateX(6px)   rotate(1deg); }
+        100% { transform: translateX(0) rotate(0deg); }
+      }
+      .slap-anim { animation: slap-shake 0.45s ease; }
+      @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50%       { transform: translateY(-12px); }
+      }
+      .float-anim { animation: float 2.8s ease-in-out infinite; }
+
+      /* ── BALÃO DE FALA ── */
+      #balao {
+        position: absolute;
+        bottom: calc(80%);
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(15, 3, 28, 0.97);
+        border: 1.5px solid rgba(155,89,182,0.7);
+        border-radius: 14px;
+        padding: 10px 14px;
+        width: max-content;
+        max-width: min(260px, calc(100vw - 32px));
+        min-width: min(160px, calc(100vw - 32px));
+        font-size: 0.78rem;
+        line-height: 1.5;
+        color: #e8d5f5;
+        box-shadow: 0 0 18px rgba(224,64,251,0.35), 0 0 40px rgba(155,89,182,0.2), inset 0 0 12px rgba(155,89,182,0.05);
+        display: none;
+        z-index: 50;
+        white-space: pre-wrap;
+        text-align: center;
+        pointer-events: none;
+        translate: 0 0;
+      }
+      #balao::after {
+        content: '';
+        position: absolute;
+        bottom: -9px; left: 50%; transform: translateX(-50%);
+        border: 7px solid transparent;
+        border-top-color: rgba(155,89,182,0.7);
+        border-bottom: none;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        filter: drop-shadow(0 2px 4px rgba(224,64,251,0.4));
+      }
+      #balao.visible { display: block; }
+      #balao {
+        z-index: 999999;
+      }
+
+      /* ── ITENS (esquerda) ── */
+      #items-bar {
+        position: fixed;
+        left: 20px;
+        top: 30%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        z-index: 10;
+      }
+      .item-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+        background: var(--panel-bg);
+        border: 1.5px solid var(--panel-border);
+        border-radius: 16px;
+        padding: 12px 14px;
+        cursor: grab;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 2px 16px rgba(155,89,182,0.2), 0 0 20px rgba(224,64,251,0.08);
+        transition: transform 0.15s, box-shadow 0.15s;
+        font-family: inherit;
+        font-size: 0.7rem;
+        color: var(--ink);
+      }
+      .item-btn:hover { transform: translateX(4px) scale(1.05); box-shadow: 0 4px 24px rgba(224,64,251,0.35), 0 0 30px rgba(155,89,182,0.2); }
+      .item-btn img { width: 52px; height: 52px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(224,64,251,0.5)); }
+      .item-btn span { font-size: 0.66rem; font-weight: 700; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.04em; color: #ce93d8; }
+
+      /* ── CHAT (direita/baixo agora!) ── */
+      /* ── CHAT (direita/baixo agora!) ── */
+      #chat-panel {
+        position: fixed;
+        left: 0px; /* Prende na lateral esquerda com uma margem */
+        right: 0px; /* Prende na direita, respeitando o botão de acessibilidade */
+        bottom: 5px; /* Colocado no chão da tela */
+        top: auto; 
+        transform: none; 
+        width: auto; /* Usando auto com left e right, ele estica 100% da área livre */
+        background: var(--panel-bg);
+        border: 1.5px solid var(--panel-border);
+
+        padding: 14px;
+        backdrop-filter: blur(14px);
+        box-shadow: 0 2px 24px rgba(155,89,182,0.3), 0 0 50px rgba(224,64,251,0.1);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        z-index: 10;
+        max-height: 35vh; /* Achatado para parecer um console no rodapé */
+      }
+ 
+
+      /* Mini personagem no topo do chat */
+      #chat-mini-char {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1.5px solid rgba(155,89,182,0.3);
+        padding-bottom: 10px;
+      }
+      #chat-mini-char img {
+        width: 52px;
+        height: 52px;
+        object-fit: contain;
+        filter: drop-shadow(0 0 8px rgba(224,64,251,0.5));
+      }
+      #chat-mini-char .chat-title {
+        font-size: 0.72rem;
+        font-family: 'Cinzel', serif;
+        font-weight: 600;
+        color: #ce93d8;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        text-shadow: 0 0 10px rgba(224,64,251,0.4);
+      }
+
+      /* Histórico de mensagens */
+      #chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 100px; /* Reduzido pra caber melhor no layout deitado */
+        max-height: 25vh;  /* Reduzido */
+        scrollbar-width: thin;
+        scrollbar-color: rgba(155,89,182,0.4) transparent;
+      }
+
+      /* Estado vazio */
+      #chat-messages:empty::before {
+        content: '🔮 Pergunte ao Takematsu... 👇';
+        font-size: 0.75rem;
+        color: #ce93d8;
+        opacity: 0.5;
+        text-align: center;
+        padding: 20px 0;
+      }
+
+      .msg {
+        font-size: 0.8rem;
+        line-height: 1.45;
+        padding: 8px 11px;
+        border-radius: 12px;
+        max-width: 95%;
+        word-break: break-word;
+      }
+      .msg.user {
+        background: rgba(155,89,182,0.35);
+        color: #e8d5f5;
+        align-self: flex-end;
+        border: 1px solid rgba(155,89,182,0.4);
+        border-bottom-right-radius: 3px;
+      }
+      .msg.bot {
+        background: rgba(30,5,50,0.85);
+        color: #e8d5f5;
+        border: 1px solid rgba(155,89,182,0.25);
+        align-self: flex-start;
+        border-bottom-left-radius: 3px;
+        box-shadow: 0 0 10px rgba(224,64,251,0.1);
+      }
+      .msg.thinking { opacity: 0.5; font-style: italic; color: #ce93d8; }
+
+      /* Input de chat */
+      #chat-form {
+        display: flex;
+        gap: 7px;
+        border-top: 1.5px solid rgba(155,89,182,0.3);
+        padding-top: 10px;
+      }
+      #chat-input {
+        flex: 1;
+        border: 1.5px solid rgba(155,89,182,0.4);
+        border-radius: 10px;
+        padding: 8px 11px;
+        font-size: 0.8rem;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        background: rgba(20,5,35,0.9);
+        color: #e8d5f5;
+      }
+      #chat-input::placeholder { color: rgba(206,147,216,0.5); }
+      #chat-input:focus { border-color: rgba(224,64,251,0.7); box-shadow: 0 0 10px rgba(224,64,251,0.2); }
+      #chat-send {
+        background: linear-gradient(135deg, #7b1fa2, #ab47bc);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        width: 36px;
+        height: 36px;
+        cursor: pointer;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: opacity 0.2s, box-shadow 0.2s;
+        box-shadow: 0 0 12px rgba(224,64,251,0.3);
+      }
+      #chat-send:hover { opacity: 0.9; box-shadow: 0 0 20px rgba(224,64,251,0.5); }
+      #chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+      /* ── A11Y BUTTON ── */
+      #btn-a11y {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #4a0072, #7b1fa2);
+        color: #e8d5f5;
+        border: 1px solid rgba(155,89,182,0.5);
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 15px rgba(155,89,182,0.4);
+        z-index: 100;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        transition: opacity 0.2s;
+      }
+      #btn-a11y:hover { opacity: 0.8; }
+      #btn-a11y:focus { outline: 3px solid white; outline-offset: 2px; }
+
+      /* ── MODAL A11Y ── */
+      .modal-backdrop {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.72);
+        backdrop-filter: blur(4px);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 200;
+      }
+      .modal-content-box {
+        background: rgba(12,3,25,0.97);
+        border: 1.5px solid rgba(155,89,182,0.45);
+        border-radius: 16px;
+        padding: 24px; width: 340px;
+        max-height: 90vh; display: flex;
+        flex-direction: column; gap: 16px;
+        box-shadow: 0 0 40px rgba(155,89,182,0.3);
+      }
+      .modal-title { font-size: 1rem; font-weight: 700; color: #e8d5f5; }
+      .grid-scroll-container {
+        display: grid; grid-template-columns: 1fr 1fr;
+        gap: 10px; overflow-y: auto; max-height: 320px;
+      }
+      .grid-card-btn {
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        gap: 6px; padding: 12px 8px;
+        border: 1.5px solid rgba(155,89,182,0.35); border-radius: 10px;
+        background: rgba(25,5,45,0.8); cursor: pointer;
+        font-family: inherit; font-size: 0.78rem; color: #ce93d8;
+        text-align: center; transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+      }
+      .grid-card-btn:hover { border-color: rgba(224,64,251,0.6); box-shadow: 0 0 10px rgba(224,64,251,0.2); }
+      .grid-card-btn.is-active { background: rgba(155,89,182,0.3); color: #e8d5f5; border-color: rgba(224,64,251,0.6); }
+      .card-icon { font-size: 1.2rem; color: #ce93d8; }
+      .card-color-input { width: 32px; height: 24px; border: none; padding: 0; cursor: pointer; background: none; }
+      .modal-buttons-container { display: flex; justify-content: flex-end; }
+      .btn-secondary {
+        background: linear-gradient(135deg, #4a0072, #7b1fa2); color: #e8d5f5; border: none;
+        border-radius: 8px; padding: 8px 20px;
+        font-family: inherit; font-size: 0.85rem; cursor: pointer;
+        box-shadow: 0 0 12px rgba(155,89,182,0.3);
+      }
+
+      /* ── EFEITOS ── */
+      @keyframes drop-fall {
+        0%   { opacity: 0; transform: translateY(-20px) scale(0.5); }
+        30%  { opacity: 1; }
+        100% { opacity: 0; transform: translateY(60px) scale(1); }
+      }
+      .water-drop {
+        position: absolute;
+        font-size: 1.2rem;
+        pointer-events: none;
+        animation: drop-fall 0.7s ease forwards;
+        z-index: 5;
+      }
+      @keyframes star-pop {
+        0%   { opacity: 1; transform: scale(0.3) rotate(0deg); }
+        60%  { opacity: 1; transform: scale(1.3) rotate(20deg); }
+        100% { opacity: 0; transform: scale(1) rotate(30deg); }
+      }
+      .star-fx {
+        position: absolute;
+        font-size: 1.8rem;
+        pointer-events: none;
+        animation: star-pop 0.5s ease forwards;
+        z-index: 5;
+        top: -10px; right: -10px;
+      }
+    </style>
   </head>
-  <style>
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    html,
-    body {
-      height: 100%;
-      overflow: hidden;
-    }
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-    main {
-      align-items: center;
-      display: flex;
-      height: 100vh;
-      justify-content: center;
-    }
-    #takematsu {
-      display: flex;
-      background-color: red;
-      width: 100px;
-      height: 100px;
-      justify-content: center;
-      align-items: center;
-    }
-    .flutuando {
-      animation: flutuando-animacao 2s ease-in-out infinite;
-    }
-    #barra-fome-container {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px;
-    }
-    #barra-fome-container span {
-      font-family: sans-serif;
-      font-size: 14px;
-    }
-    #barra-fome-fundo {
-      width: 200px;
-      height: 20px;
-      background-color: #333;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    #barra-fome {
-      height: 100%;
-      width: 100%;
-      background-color: orange;
-      border-radius: 10px;
-      transition: width 0.3s ease, background-color 0.3s ease;
-    }
-    #sushi {
-      width: 80px;
-      height: 80px;
-    }
-    #comida {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      cursor: grab;
-    }
-    #btn-fixed-action {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background-color: #222;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 52px;
-      height: 52px;
-      font-size: 22px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-    }
-    #btn-fixed-action:focus {
-      outline: 3px solid #fff;
-      outline-offset: 2px;
-    }
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background-color: rgba(0, 0, 0, 0.55);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 200;
-    }
-    .modal-content-box {
-      background: #fff;
-      border-radius: 12px;
-      padding: 24px;
-      width: 340px;
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .modal-title {
-      font-family: sans-serif;
-      font-size: 1.1rem;
-      font-weight: 700;
-    }
-    .grid-scroll-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      overflow-y: auto;
-      max-height: 340px;
-    }
-    .grid-card-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 12px 8px;
-      border: 2px solid #ddd;
-      border-radius: 10px;
-      background: #f5f5f5;
-      cursor: pointer;
-      font-family: sans-serif;
-      font-size: 0.8rem;
-      text-align: center;
-      transition: background 0.2s, border-color 0.2s;
-    }
-    .grid-card-btn:focus {
-      outline: 3px solid #222;
-      outline-offset: 2px;
-    }
-    .grid-card-btn.is-active {
-      background: #222;
-      color: #fff;
-      border-color: #222;
-    }
-    .card-icon {
-      font-size: 1.3rem;
-    }
-    .card-color-input {
-      width: 32px;
-      height: 24px;
-      border: none;
-      padding: 0;
-      cursor: pointer;
-      background: none;
-    }
-    .modal-buttons-container {
-      display: flex;
-      justify-content: flex-end;
-    }
-    .btn-secondary {
-      background: #222;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 20px;
-      font-family: sans-serif;
-      font-size: 0.9rem;
-      cursor: pointer;
-    }
-    .btn-secondary:focus {
-      outline: 3px solid #222;
-      outline-offset: 2px;
-    }
-    #chuveiro {
-      position: fixed;
-      bottom: 20px;
-      left: 120px;
-      cursor: grab;
-    }
-
-    #chuveiro-img {
-      width: 80px;
-      height: 80px;
-    }
-
-    @keyframes flutuando-animacao {
-      0% {
-        transform: translateY(0);
-      }
-      50% {
-        transform: translateY(-15px);
-      }
-      100% {
-        transform: translateY(0);
-      }
-    }
-  </style>
   <body>
-    <main role="main" aria-label="Área principal do jogo">
-      <div
-        class="zona-destino personagem"
-        id="takematsu"
-        role="button"
-        tabindex="0"
-        aria-label="Takematsu, clique para interagir"
-        aria-describedby="barra-fome-label"
-      ></div>
-    </main>
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
 
-    <aside
-      id="barra-fome-container"
-      class="hud hud-fome"
-      role="status"
-      aria-live="polite"
-      aria-label="Status de fome do Takematsu"
-    >
-      <span
-        id="barra-fome-label"
-        class="hud-titulo text-content"
-        style="color: black"
-        >Fome do Takematsu</span
-      >
-      <div
-        id="barra-fome-fundo"
-        class="barra-container"
-        role="progressbar"
-        aria-valuenow="100"
-        aria-valuemin="0"
-        aria-valuemax="100"
-        aria-labelledby="barra-fome-label"
-      >
-        <div id="barra-fome" class="barra-preenchimento"></div>
+
+    <aside id="hud" role="status" aria-live="polite" aria-label="Status do Takematsu">
+      <div class="stat-row">
+        <span class="stat-icon">🍱</span>
+        <span class="stat-label">Fome</span>
+        <div class="bar-track" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" id="bar-fome-track" aria-label="Barra de fome">
+          <div class="bar-fill" id="bar-fome-fill" style="width:100%"></div>
+        </div>
+      </div>
+      <div class="stat-row">
+        <span class="stat-icon">🧼</span>
+        <span class="stat-label">Limpeza</span>
+        <div class="bar-track" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" id="bar-sujo-track" aria-label="Barra de limpeza">
+          <div class="bar-fill" id="bar-sujo-fill" style="width:100%"></div>
+        </div>
       </div>
     </aside>
 
-    <div
-      id="comida"
-      class="item-arrastavel alimento"
-      draggable="true"
-      role="button"
-      tabindex="0"
-      aria-label="Sushi, arraste até o Takematsu para alimentá-lo"
-      aria-grabbed="false"
-    >
-      <img
-        id="sushi"
-        class="alimento-imagem"
-        src="imgs\a7cf15d5-9ad9-4aef-b7c1-e73608b99c66-removebg-preview.png"
-        alt="Sushi para alimentar o Takematsu"
-        aria-hidden="true"
-      />
+    <main role="main" aria-label="Área principal do jogo">
+      <div id="takematsu-wrap"
+        class="zona-destino"
+        role="button"
+        tabindex="0"
+        aria-label="Takematsu, clique para dar um tapa"
+        draggable="false">
+        <div id="balao" role="status" aria-live="polite" aria-label="Fala do Takematsu"></div>
+        <img id="takematsu-img"
+          src="imgs/takematsu-falando-1.png"
+          alt="Takematsu"
+          draggable="false" />
+      </div>
+    </main>
+
+    <div id="items-bar">
+      <div id="comida" class="item-btn" draggable="true" role="button" tabindex="0"
+        aria-label="Sushi — arraste até o Takematsu para alimentá-lo" aria-grabbed="false">
+        <img src="imgs/sushi.png" alt="Sushi" />
+        <span>Sushi</span>
+      </div>
+      <div id="chuveiro" class="item-btn" draggable="true" role="button" tabindex="0"
+        aria-label="Chuveiro — arraste até o Takematsu para lavá-lo" aria-grabbed="false">
+        <img src="imgs/chuveiro.png" alt="Chuveiro" />
+        <span>Banho</span>
+      </div>
     </div>
 
-    <div
-      id="chuveiro"
-      class="item-arrastavel higiene"
-      draggable="true"
-      role="button"
-      tabindex="0"
-      aria-label="Chuveiro, arraste até o Takematsu para lavá-lo"
-      aria-grabbed="false"
-    >
-      <img
-        id="chuveiro-img"
-        class="chuveiro-imagem"
-        src="imgs\ícone-do-chuveiro-símbolo-banheiro-com-spray-de-água-design-desenho-animado-simples-ilustração-vetorial-isolada-em-branco-229280639-removebg-preview.png"
-        alt="Chuveiro para limpar o Takematsu"
-        aria-hidden="true"
-      />
-    </div>
+    <section id="chat-panel" aria-label="Chat com Takematsu">
+      <div id="chat-mini-char">
+        <img src="imgs/takematsu-falando-1.png" alt="Takematsu mini" id="chat-mini-img" />
+        <span class="chat-title">💬 Fale com<br>o Takematsu</span>
+      </div>
 
-    <button
-      type="button"
-      id="btn-fixed-action"
-      aria-label="Abrir menu de acessibilidade"
-      aria-haspopup="dialog"
-    >
+      <div id="chat-messages" role="log" aria-live="polite" aria-label="Histórico de conversa"></div>
+
+      <div id="chat-form">
+        <input id="chat-input" type="text" placeholder="Manda uma pergunta..." aria-label="Sua pergunta para o Takematsu" maxlength="280" />
+        <button id="chat-send" aria-label="Enviar pergunta" type="button">➤</button>
+      </div>
+    </section>
+
+    <button type="button" id="btn-a11y" aria-label="Abrir menu de acessibilidade" aria-haspopup="dialog">
       <i data-lucide="accessibility" aria-hidden="true"></i>
     </button>
 
-    <div
-      id="modal-overlay"
-      class="modal-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-box-title"
-      aria-describedby="modal-box-desc"
-      style="display: none"
-    >
-      <div id="modal-box" class="modal-content-box a11y-menu-box">
+    <div id="modal-overlay" class="modal-backdrop" role="dialog" aria-modal="true"
+      aria-labelledby="modal-box-title" style="display: none">
+      <div id="modal-box" class="modal-content-box">
         <div tabindex="0" class="sr-only" id="modal-focus-start"></div>
-
         <h2 id="modal-box-title" class="modal-title">Menu de Acessibilidade</h2>
-        <p id="modal-box-desc" class="sr-only">
-          Selecione as opções abaixo para customizar sua experiência de
-          navegação no site.
-        </p>
-
         <div id="a11y-grid-container" class="grid-scroll-container">
           <button type="button" id="btn-inc-font" class="grid-card-btn">
-            <span class="card-icon" aria-hidden="true"><i data-lucide="a-arrow-up"></i></span>
-            <span class="card-label">Aumentar Fonte</span>
+            <span class="card-icon"><i data-lucide="a-arrow-up"></i></span>
+            <span>Aumentar Fonte</span>
           </button>
-
-                <button type="button" id="btn-dec-font" class="grid-card-btn">
-                    <span class="card-icon" aria-hidden="true"><i data-lucide="a-arrow-down"></i></span>
-                    <span class="card-label">Diminuir Fonte</span>
-                </button>
-
-                <button type="button" id="btn-toggle-images" class="grid-card-btn">
-                    <span class="card-icon" aria-hidden="true"><i data-lucide="image-off"></i></span>
-                    <span class="card-label">Esconder Imagens</span>
-                </button>
-
-                <label for="input-text-color" id="label-text-color" class="grid-card-btn label-input-card">
-                    <span class="card-icon" aria-hidden="true"><i data-lucide="baseline"></i></span>
-                    <span class="card-label">Cor do Texto</span>
-                    <input type="color" id="input-text-color" class="card-color-input" aria-label="Escolher cor do texto do site">
-                </label>
-
+          <button type="button" id="btn-dec-font" class="grid-card-btn">
+            <span class="card-icon"><i data-lucide="a-arrow-down"></i></span>
+            <span>Diminuir Fonte</span>
+          </button>
+          <button type="button" id="btn-toggle-images" class="grid-card-btn">
+            <span class="card-icon"><i data-lucide="image-off"></i></span>
+            <span>Esconder Imagens</span>
+          </button>
+          <label for="input-text-color" class="grid-card-btn">
+            <span class="card-icon"><i data-lucide="baseline"></i></span>
+            <span>Cor do Texto</span>
+            <input type="color" id="input-text-color" class="card-color-input" aria-label="Escolher cor do texto" />
+          </label>
           <button type="button" id="btn-low-sat" class="grid-card-btn">
-            <span class="card-icon" aria-hidden="true"><i data-lucide="droplet-off"></i></span>
-            <span class="card-label">Baixa Saturação</span>
+            <span class="card-icon"><i data-lucide="droplet-off"></i></span>
+            <span>Baixa Saturação</span>
           </button>
-
-                <button type="button" id="btn-high-sat" class="grid-card-btn">
-                    <span class="card-icon" aria-hidden="true"><i data-lucide="droplets"></i></span>
-                    <span class="card-label">Alta Saturação</span>
-                </button>
-
-                <button type="button" id="btn-inc-spacing" class="grid-card-btn">
-                    <span class="card-icon" aria-hidden="true"><i data-lucide="unfold-horizontal"></i></span>
-                    <span class="card-label">Aumentar Espaçamento</span>
-                </button>
-
-                <button type="button" id="btn-dec-spacing" class="grid-card-btn">
-                    <span class="card-icon" aria-hidden="true"><i data-lucide="fold-horizontal"></i></span>
-                    <span class="card-label">Diminuir Espaçamento</span>
-                </button>
-
-                <label for="input-bg-color" id="label-bg-color" class="grid-card-btn label-input-card">
-                    <span class="card-icon" aria-hidden="true"><i data-lucide="paint-bucket"></i></span>
-                    <span class="card-label">Cor do Fundo</span>
-                    <input type="color" id="input-bg-color" class="card-color-input" aria-label="Escolher cor de fundo do site">
-                </label>
-
-            </div>
-
-        <div id="modal-actions" class="modal-buttons-container">
-          <button type="button" id="btn-modal-cancel" class="btn-secondary">
-            Fechar
+          <button type="button" id="btn-high-sat" class="grid-card-btn">
+            <span class="card-icon"><i data-lucide="droplets"></i></span>
+            <span>Alta Saturação</span>
           </button>
+          <button type="button" id="btn-inc-spacing" class="grid-card-btn">
+            <span class="card-icon"><i data-lucide="unfold-horizontal"></i></span>
+            <span>Mais Espaçamento</span>
+          </button>
+          <button type="button" id="btn-dec-spacing" class="grid-card-btn">
+            <span class="card-icon"><i data-lucide="fold-horizontal"></i></span>
+            <span>Menos Espaçamento</span>
+          </button>
+          <label for="input-bg-color" id="label-bg-color" class="grid-card-btn">
+            <span class="card-icon"><i data-lucide="paint-bucket"></i></span>
+            <span>Cor do Fundo</span>
+            <input type="color" id="input-bg-color" class="card-color-input" aria-label="Escolher cor de fundo" />
+          </label>
+        </div>
+        <div class="modal-buttons-container">
+          <button type="button" id="btn-modal-cancel" class="btn-secondary">Fechar</button>
         </div>
         <div tabindex="0" class="sr-only" id="modal-focus-end"></div>
       </div>
     </div>
 
-</body>
-<script src="https://unpkg.com/lucide@latest"></script>
-<script>lucide.createIcons();</script>
-<script src="script.js"></script>
-<script src="scriptAcessibilidade.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>lucide.createIcons();</script>
+    <script src="script.js"></script>
+    <script src="scriptAcessibilidade.js"></script>
+
+    <script>
+    (function() {
+      function fixBalloon() {
+        const balao = document.getElementById('balao');
+        if (!balao || !balao.classList.contains('visible')) return;
+
+        // Resetar transform para medir posição real
+        balao.style.transform = 'translateX(-50%)';
+        balao.style.left = '50%';
+
+        const rect = balao.getBoundingClientRect();
+        const margin = 8;
+        const vw = window.innerWidth;
+
+        let dx = 0;
+        if (rect.left < margin) {
+          dx = margin - rect.left;
+        } else if (rect.right > vw - margin) {
+          dx = (vw - margin) - rect.right;
+        }
+
+        if (dx !== 0) {
+          balao.style.transform = `translateX(calc(-50% + ${dx}px))`;
+        }
+      }
+
+      // Observar mudanças no balão (quando fica visível)
+      const observer = new MutationObserver(() => {
+        requestAnimationFrame(fixBalloon);
+      });
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const balao = document.getElementById('balao');
+        if (balao) {
+          observer.observe(balao, { attributes: true, characterData: true, childList: true });
+        }
+      });
+
+      window.addEventListener('resize', fixBalloon);
+    })();
+    </script>
+  </body>
 </html>

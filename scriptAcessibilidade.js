@@ -1,202 +1,517 @@
-const botaoFixo = document.getElementById("btn-fixed-action");
-const caixa = document.getElementById("modal-overlay");
-const botao_fechar = document.getElementById("btn-modal-cancel");
+//==================================================
+// ELEMENTOS DO HTML
+//==================================================
+
+const btnA11y = document.getElementById("btn-a11y");
+const modal = document.getElementById("modal-overlay");
+const btnFechar = document.getElementById("btn-modal-cancel");
+
+const btnIncFont = document.getElementById("btn-inc-font");
+const btnDecFont = document.getElementById("btn-dec-font");
+
+const btnToggleImages = document.getElementById("btn-toggle-images");
+
+const btnLowSat = document.getElementById("btn-low-sat");
+const btnHighSat = document.getElementById("btn-high-sat");
+
+const btnIncSpacing = document.getElementById("btn-inc-spacing");
+const btnDecSpacing = document.getElementById("btn-dec-spacing");
+
+const inputTextColor = document.getElementById("input-text-color");
+const inputBgColor = document.getElementById("input-bg-color");
+
 const botoes = document.querySelectorAll(".grid-card-btn");
 
-const crescer_fonte = document.getElementById("btn-inc-font");
-const disminuir_fonte = document.getElementById("btn-dec-font");
-const cor_texto = document.getElementById("input-text-color");
-const tirar_imagens = document.getElementById("btn-toggle-images");
-const btnBaixaSat = document.getElementById('btn-low-sat');
-const btnAltaSat = document.getElementById('btn-high-sat');
-const espacamento_alto = document.getElementById("btn-inc-spacing");
-const espacamento_baixo = document.getElementById("btn-dec-spacing");
-const cor_fundo = document.getElementById("label-bg-color");
 
-botaoFixo.addEventListener('click', function() {
-    caixa.style.display = "flex";
+//==================================================
+// CONFIGURAÇÕES
+//==================================================
+
+
+let tamanhoFonte = 100;
+let espacamento = 0;
+let imagensOcultas = false;
+let saturacao = "normal";
+
+
+//==================================================
+// LOCAL STORAGE
+//==================================================
+
+
+function salvarConfiguracoes(){
+
+    const dados = {
+
+        tamanhoFonte,
+        espacamento,
+        imagensOcultas,
+        saturacao,
+
+        corTexto:inputTextColor.value,
+        corFundo:inputBgColor.value
+
+    };
+
+
+    localStorage.setItem(
+        "takematsuA11Y",
+        JSON.stringify(dados)
+    );
+
+}
+
+
+
+function carregarConfiguracoes(){
+
+    const dados = JSON.parse(
+        localStorage.getItem("takematsuA11Y")
+    );
+
+
+    if(!dados) return;
+
+
+    tamanhoFonte = dados.tamanhoFonte;
+    espacamento = dados.espacamento;
+    imagensOcultas = dados.imagensOcultas;
+    saturacao = dados.saturacao;
+
+
+    aplicarFonte();
+    aplicarEspacamento();
+    aplicarSaturacao();
+
+
+    if(dados.corTexto){
+
+        inputTextColor.value = dados.corTexto;
+        alterarCorTexto();
+
+    }
+
+
+    if(dados.corFundo){
+
+        inputBgColor.value = dados.corFundo;
+        alterarCorFundo();
+
+    }
+
+
+    if(imagensOcultas){
+
+        esconderImagens();
+
+    }
+
+}
+
+
+
+//==================================================
+// ABRIR E FECHAR MODAL
+//==================================================
+
+
+btnA11y.addEventListener("click",()=>{
+
+    modal.style.display = "flex";
+
 });
 
-botao_fechar.addEventListener('click', function() {
-    caixa.style.display = "none";
+
+btnFechar.addEventListener("click",()=>{
+
+    modal.style.display = "none";
+
 });
 
-botoes.forEach(button => {
-    if (!button) return;
-    if (!button.hasAttribute("aria-pressed")) {
-        button.setAttribute("aria-pressed", "false");
+
+modal.addEventListener("click",(e)=>{
+
+    if(e.target === modal){
+
+        modal.style.display = "none";
+
     }
-    button.addEventListener("click", () => {
-        const isActive = button.classList.toggle("is-active");
-        button.setAttribute("aria-pressed", isActive ? "true" : "false");
-    });
+
 });
 
-function aumentar_fonte() {
-    const texto = document.querySelector('.text-content');
-    if (!texto) return;
-    if (crescer_fonte.classList.contains("is-active")) {
-        texto.style.fontSize = "1.5rem";
-        console.log("Aumentando fonte");
 
-        if (disminuir_fonte.classList.contains("is-active")) {
-            disminuir_fonte.classList.remove("is-active");
-            disminuir_fonte.setAttribute("aria-pressed", "false");
-        }
-    } else {
-        texto.style.fontSize = "1.125rem";
-        console.log("Normalizando fonte");
+
+//==================================================
+// ARIA PRESSED
+//==================================================
+
+
+botoes.forEach((botao)=>{
+
+    if(!botao.hasAttribute("aria-pressed")){
+
+        botao.setAttribute(
+            "aria-pressed",
+            "false"
+        );
+
     }
-}
 
-function diminui_fonte() {
-    const texto = document.querySelector('.text-content');
-    if (!texto) return;
 
-    if (disminuir_fonte.classList.contains("is-active")) {
-        texto.style.fontSize = "1rem";
-        console.log("Diminuindo fonte");
+    botao.addEventListener("click",()=>{
 
-        if (crescer_fonte.classList.contains("is-active")) {
-            crescer_fonte.classList.remove("is-active");
-            crescer_fonte.setAttribute("aria-pressed", "false");
-        }
-    } else {
-        texto.style.fontSize = "1.125rem";
-        console.log("Normalizando fonte");
-    }
-}
-function toggle_imagens() {
-    const imagensAtivas = document.querySelectorAll('img[data-substituivel]');
-    const textosSubstitutos = document.querySelectorAll('span[data-substituto]');
- 
-    if (textosSubstitutos.length > 0) {
-        textosSubstitutos.forEach(textoSubstituto => {
-            const pai = textoSubstituto.parentNode;
-            const novaImagem = document.createElement('img');
-            novaImagem.src = textoSubstituto.dataset.src;
-            novaImagem.alt = textoSubstituto.dataset.alt;
-            novaImagem.className = textoSubstituto.dataset.classe;
-            if (textoSubstituto.dataset.id) novaImagem.id = textoSubstituto.dataset.id;
-            if (textoSubstituto.dataset.ariaHidden) novaImagem.setAttribute("aria-hidden", textoSubstituto.dataset.ariaHidden);
-            if (textoSubstituto.dataset.width) novaImagem.style.width = textoSubstituto.dataset.width;
-            if (textoSubstituto.dataset.height) novaImagem.style.height = textoSubstituto.dataset.height;
-            novaImagem.setAttribute("data-substituivel", "true");
-            pai.replaceChild(novaImagem, textoSubstituto);
-        });
-        return;
-    }
-    document.querySelectorAll('img').forEach(imagem => {
-        const pai = imagem.parentNode;
-        const novoTexto = document.createElement('span');
-        novoTexto.setAttribute("data-substituto", "true");
-        novoTexto.innerHTML = `<strong>${imagem.alt || "Imagem"}</strong>`;
-        novoTexto.dataset.src = imagem.src;
-        novoTexto.dataset.alt = imagem.alt;
-        novoTexto.dataset.classe = imagem.className;
-        novoTexto.dataset.id = imagem.id;
-        novoTexto.dataset.ariaHidden = imagem.getAttribute("aria-hidden") || "";
-        novoTexto.dataset.width = imagem.style.width;
-        novoTexto.dataset.height = imagem.style.height;
-        novoTexto.style.fontFamily = "sans-serif";
-        novoTexto.style.fontSize = "0.7rem";
-        novoTexto.style.color = "#000";
-        pai.replaceChild(novoTexto, imagem);
+        const ativo = botao.classList.toggle(
+            "is-active"
+        );
+
+
+        botao.setAttribute(
+
+            "aria-pressed",
+            ativo ? "true":"false"
+
+        );
+
     });
+
+});
+
+
+
+//==================================================
+// AUMENTAR / DIMINUIR FONTE
+//==================================================
+
+
+function aplicarFonte(){
+
+    document.documentElement.style.fontSize =
+
+        tamanhoFonte + "%";
+
 }
 
-function mudar_cor_texto() {
-    const inputCor = document.getElementById('input-text-color');
-    const textos = document.querySelectorAll('.text-content');
-    const textos2 = document.querySelectorAll('.card-label');
 
-    textos.forEach(texto => {
-        texto.style.color = inputCor.value;
+
+btnIncFont.addEventListener("click",()=>{
+
+    if(tamanhoFonte < 150){
+
+        tamanhoFonte +=10;
+
+    }
+
+    aplicarFonte();
+    salvarConfiguracoes();
+
+});
+
+
+btnDecFont.addEventListener("click",()=>{
+
+    if(tamanhoFonte > 50){
+
+        tamanhoFonte -=10;
+
+    }
+
+    aplicarFonte();
+    salvarConfiguracoes();
+
+});
+
+
+
+
+//==================================================
+// ESPAÇAMENTO
+//==================================================
+
+
+function aplicarEspacamento(){
+
+
+    document.body.style.letterSpacing =
+
+        espacamento + "px";
+
+
+}
+
+
+
+btnIncSpacing.addEventListener("click",()=>{
+
+    if(espacamento < 10){
+
+        espacamento++;
+
+    }
+
+    aplicarEspacamento();
+    salvarConfiguracoes();
+
+});
+
+
+btnDecSpacing.addEventListener("click",()=>{
+
+
+    if(espacamento > -2){
+
+        espacamento--;
+
+    }
+
+    aplicarEspacamento();
+    salvarConfiguracoes();
+
+});
+
+
+
+
+//==================================================
+// COR DO TEXTO
+//==================================================
+
+
+function alterarCorTexto(){
+
+
+    const elementos = document.querySelectorAll(
+
+        "h1,h2,h3,h4,h5,h6,p,span,button,input,label,div"
+
+    );
+
+
+    elementos.forEach((el)=>{
+
+        el.style.color = inputTextColor.value;
+
     });
-    textos2.forEach(label => {
-        label.style.color = inputCor.value;
+
+
+    salvarConfiguracoes();
+
+}
+
+
+
+inputTextColor.addEventListener(
+
+    "input",
+    alterarCorTexto
+
+);
+
+
+
+
+//==================================================
+// COR DO FUNDO
+//==================================================
+
+
+function alterarCorFundo(){
+
+
+    document.body.style.background =
+
+        inputBgColor.value;
+
+
+    salvarConfiguracoes();
+
+}
+
+
+inputBgColor.addEventListener(
+
+    "input",
+    alterarCorFundo
+
+);
+
+
+
+
+//==================================================
+// SATURAÇÃO
+//==================================================
+
+
+function aplicarSaturacao(){
+
+
+    if(saturacao === "alta"){
+
+        document.documentElement.style.filter =
+
+            "saturate(250%)";
+
+    }
+
+
+    else if(saturacao === "baixa"){
+
+        document.documentElement.style.filter =
+
+            "saturate(40%)";
+
+    }
+
+
+    else{
+
+        document.documentElement.style.filter =
+
+            "none";
+
+    }
+
+
+}
+
+
+
+btnHighSat.addEventListener("click",()=>{
+
+
+    saturacao =
+
+        saturacao === "alta"
+
+        ? "normal"
+        : "alta";
+
+
+    aplicarSaturacao();
+    salvarConfiguracoes();
+
+
+});
+
+
+
+btnLowSat.addEventListener("click",()=>{
+
+
+    saturacao =
+
+        saturacao === "baixa"
+
+        ? "normal"
+        : "baixa";
+
+
+    aplicarSaturacao();
+    salvarConfiguracoes();
+
+
+});
+
+
+
+
+//==================================================
+// ESCONDER IMAGENS
+//==================================================
+
+
+function esconderImagens(){
+
+
+    document.querySelectorAll("img")
+
+    .forEach((img)=>{
+
+
+        img.dataset.altOriginal = img.alt;
+
+        img.style.visibility = "hidden";
+
+
     });
+
+
 }
 
-function aumentar_satu() {
-    const html = document.querySelector('html');
-    if (btnAltaSat.classList.contains("is-active")) {
-        html.style.filter = "saturate(300%)";
 
-        if (btnBaixaSat.classList.contains("is-active")) {
-            btnBaixaSat.classList.remove("is-active");
-            btnBaixaSat.setAttribute("aria-pressed", "false");
-        }
-    } else {
-        html.style.filter = "none";
+
+function mostrarImagens(){
+
+
+    document.querySelectorAll("img")
+
+    .forEach((img)=>{
+
+
+        img.style.visibility = "visible";
+
+
+    });
+
+
+}
+
+
+
+btnToggleImages.addEventListener("click",()=>{
+
+
+    imagensOcultas = !imagensOcultas;
+
+
+    if(imagensOcultas){
+
+        esconderImagens();
+
     }
-}
 
-function diminuir_satu() {
-    const html = document.querySelector('html');
-    if (btnBaixaSat.classList.contains("is-active")) {
-        html.style.filter = "saturate(50%)";
+    else{
 
-        if (btnAltaSat.classList.contains("is-active")) {
-            btnAltaSat.classList.remove("is-active");
-            btnAltaSat.setAttribute("aria-pressed", "false");
-        }
-    } else {
-        html.style.filter = "none";
+        mostrarImagens();
+
     }
-}
 
-function aumentar_espacamento() {
-    const texto = document.querySelector('.text-content');
-    if (!texto) return;
 
-    if (espacamento_alto.classList.contains("is-active")) {
-        texto.style.wordSpacing = "15px";
-        console.log("Aumentando espaço");
+    salvarConfiguracoes();
 
-        if (espacamento_baixo.classList.contains("is-active")) {
-            espacamento_baixo.classList.remove("is-active");
-            espacamento_baixo.setAttribute("aria-pressed", "false");
-        }
-    } else {
-        texto.style.wordSpacing = "normal";
-        console.log("Normalizando espaço");
+
+});
+
+
+
+
+//==================================================
+// TECLA ESC
+//==================================================
+
+
+document.addEventListener("keydown",(e)=>{
+
+
+    if(e.key === "Escape"){
+
+        modal.style.display = "none";
+
     }
-}
 
-function diminuir_espacamento() {
-    const texto = document.querySelector('.text-content');
-    if (!texto) return;
 
-    if (espacamento_baixo.classList.contains("is-active")) {
-        texto.style.wordSpacing = "3px";
-        console.log("Diminuindo espaço");
+});
 
-        if (espacamento_alto.classList.contains("is-active")) {
-            espacamento_alto.classList.remove("is-active");
-            espacamento_alto.setAttribute("aria-pressed", "false");
-        }
-    } else {
-        texto.style.wordSpacing = "normal";
-        console.log("Normalizando espaço");
-    }
-}
 
-function mudar_cor_fundo() {
-    const inputCor = document.getElementById('input-bg-color');
-    const fundo = document.querySelector('body');
 
-    if (fundo && inputCor) {
-        fundo.style.backgroundColor = inputCor.value;
-    }
-}
 
-cor_fundo.addEventListener('input', mudar_cor_fundo);
-espacamento_baixo.addEventListener('click', diminuir_espacamento);
-espacamento_alto.addEventListener('click', aumentar_espacamento);
-btnBaixaSat.addEventListener('click', diminuir_satu);
-btnAltaSat.addEventListener('click', aumentar_satu);
-cor_texto.addEventListener('input', mudar_cor_texto);
-tirar_imagens.addEventListener('click', toggle_imagens);
-crescer_fonte.addEventListener('click', aumentar_fonte);
-disminuir_fonte.addEventListener('click', diminui_fonte);
+//==================================================
+// INICIAR
+//==================================================
+
+
+window.addEventListener("load",()=>{
+
+    carregarConfiguracoes();
+
+});
