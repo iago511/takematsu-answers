@@ -7,6 +7,8 @@ const chuveiro      = document.getElementById("chuveiro");
 const barFomeFill   = document.getElementById("bar-fome-fill");
 const barFomeTrack  = document.getElementById("bar-fome-track");
 const barSujoFill   = document.getElementById("bar-sujo-fill");
+const barVidaFill   = document.getElementById("bar-vida-fill");
+const barVidaTrack  = document.getElementById("bar-vida-track");
 const barSujoTrack  = document.getElementById("bar-sujo-track");
 const balao         = document.getElementById("balao");
 const chatMessages  = document.getElementById("chat-messages");
@@ -22,6 +24,13 @@ const IMGS = {
   banho:     "imgs/modo-banho-quando-chuveiro.png",
   poucoFome: "imgs/pouco-faminto.png",
   muitoFome: "imgs/muito-faminto.png",
+  morto:     "imgs/takematsu-morto.png"
+};
+
+const ELES = {
+  sophia: "imgs/sophia.png",
+  akira: "imgs/akira.png",
+  iago: "imgs/iago.png"
 };
 
 // ── STATE ─────────────────────────────────────────────────
@@ -29,11 +38,66 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 let fome          = 100;
 let limpeza       = 100;
+let vida         = 100;
 let estaSlapando  = false;
 let estaBanhando  = false;
 let estaPensando  = false;
 let balaoTimer    = null;
 let idleFlip      = true;
+
+const som = new Audio('imgs/som.mp3');
+
+// ── QTE ─────────────────────────────────────────────────
+let qteActive = false;
+let requiredKey = 'f';
+let qteTimeout, countdownInterval;
+let timeLeft = 2.0;
+
+function startQTE() {
+    document.getElementById('qte-container').style.display = 'block';
+    qteActive = true;
+    timeLeft = 2.0;
+
+    document.getElementById('target-key').innerText = requiredKey.toUpperCase();
+    document.getElementById('timer').innerText = timeLeft.toFixed(1);
+
+    // Atualiza o visor do tempo a cada 100ms
+    countdownInterval = setInterval(() => {
+        timeLeft -= 0.1;
+        if (timeLeft > 0) {
+            document.getElementById('timer').innerText = timeLeft.toFixed(1);
+        }
+    }, 100);
+
+    // Tempo limite total (2 segundos)
+    qteTimeout = setTimeout(() => {
+        endQTE(false, 'Tempo esgotado! Você perdeu.');
+        vida = Math.max(0, vida - 20);
+        updateBarVida();
+    }, 2000);
+}
+
+document.addEventListener('keydown', (event) => {
+    if (!qteActive) return;
+
+    if (event.key.toLowerCase() === requiredKey) {
+        endQTE(true, 'Sucesso! Você agiu a tempo.');
+        vida = Math.max(0, vida + 10);
+        updateBarVida();
+    } else {
+        endQTE(false, 'Tecla errada! Você perdeu.');
+        vida = Math.max(0, vida - 20);
+        updateBarVida();
+    }
+});
+
+function endQTE(success, message) {
+    qteActive = false;
+    clearTimeout(qteTimeout);
+    clearInterval(countdownInterval);
+
+    document.getElementById('qte-container').style.display = 'none';
+}
 
 // ── IMAGE CONTROLLER ──────────────────────────────────────
 function setImg(key) {
@@ -41,9 +105,46 @@ function setImg(key) {
   takematsuImg.src = src;
   if (chatMiniImg) chatMiniImg.src = src;
 }
+// ── Reloginho ─────────────────────────────────────────────────
+function atualizarRelogio() {
+      const agora = new Date();
+      let horas = agora.getHours().toString().padStart(2, '0');
+      let minutos = agora.getMinutes().toString().padStart(2, '0');
+      let segundos = agora.getSeconds().toString().padStart(2, '0');
+
+      document.getElementById('relogio').textContent = `${horas}:${minutos}:${segundos}`;
+    }
+
+    setInterval(atualizarRelogio, 1000);
+    atualizarRelogio();
+// ── MODO TERROR ─────────────────────────────────────────────
+function spawnarEles() {
+  document.getElementById('sophia').style.display = 'block';
+  document.getElementById('akira').style.display = 'block';
+}
+function esconderEles() {
+  document.getElementById('sophia').style.display = 'none';
+  document.getElementById('akira').style.display = 'none';
+}
+async function jumpscare(){
+  som.play();
+  document.getElementById('iago').style.display = 'block';
+  await sleep(1000);
+  document.getElementById('iago').style.display = 'none';
+}
+function terrorTime() {
+    hora = new Date().getHours();
+    if (hora >= 3 && hora < 4) {
+      document.body.classList.remove("background");
+      startQTE();
+}
+}
+    setInterval(terrorTime, 10000);
+    terrorTime();
 
 function updateIdleImg() {
   if (estaSlapando || estaBanhando || estaPensando) return;
+  if (vida <= 0) { setImg("morto"); return; }
   if (fome <= 30) { setImg("muitoFome"); return; }
   if (fome <= 60) { setImg("poucoFome"); return; }
   idleFlip = !idleFlip;
@@ -65,6 +166,33 @@ function updateBarSujo() {
   if (limpeza > 60)      barSujoFill.style.background = "#4fc3f7";
   else if (limpeza > 30) barSujoFill.style.background = "#ffb74d";
   else                   barSujoFill.style.background = "#ef5350";
+}
+
+function updateBarVida() {
+  barVidaFill.style.width = vida + "%";
+  barVidaTrack.setAttribute("aria-valuenow", vida);
+
+  if (vida <= 0) {
+    jumpscare();
+    barVidaFill.style.background = "#f44336";
+    setImg("morto");
+    showBalao("Ih, morri... socorro 😭", 3000);
+    return;
+  }
+
+  if (vida > 0) {
+    setImg("default1");
+  }
+
+  if (vida > 60) {
+    barVidaFill.style.background = "#4caf50";
+    esconderEles();
+  } else if (vida > 30) {
+    barVidaFill.style.background = "#ffeb3b";
+    spawnarEles();
+  } else {
+    barVidaFill.style.background = "#f44336";
+  }
 }
 
 // ── SPEECH BUBBLE ─────────────────────────────────────────
@@ -315,4 +443,5 @@ chatInput.addEventListener("keydown", e => { if (e.key === "Enter") sendChat(); 
 // ── INIT ──────────────────────────────────────────────────
 updateBarFome();
 updateBarSujo();
+updateBarVida();
 updateIdleImg();

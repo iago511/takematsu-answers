@@ -30,9 +30,11 @@
 
       /* ── BACKGROUND ── */
       body {
-        background: linear-gradient(180deg, #030008 0%, #0d0020 30%, #14002e 60%, #0a0018 80%, #050010 100%);
         position: relative;
         overflow: hidden;
+      }
+      .background {
+        background: linear-gradient(180deg, #030008 0%, #0d0020 30%, #14002e 60%, #0a0018 80%, #050010 100%);
       }
 
       /* Stars background */
@@ -117,6 +119,24 @@
       }
 
       /* ── HUD topo ── */
+      #relogio {
+        position: fixed;
+        top: 14px;
+        left: 14px;
+        z-index: 11;
+        background: rgba(20, 5, 35, 0.92);
+        border: 1.5px solid rgba(155, 89, 182, 0.45);
+        border-radius: 12px;
+        padding: 8px 14px;
+        color: #e8d5f5;
+        font-family: 'Cinzel', serif;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-shadow: 0 0 8px rgba(224,64,251,0.6);
+        box-shadow: inset 0 0 8px rgba(255,255,255,0.08), 0 2px 16px rgba(155,89,182,0.2);
+      }
+
       #hud {
         position: fixed;
         top: 14px;
@@ -145,6 +165,7 @@
       .bar-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease, background 0.4s ease; box-shadow: 0 0 8px currentColor; }
       #bar-fome-fill { background: var(--bar-full); }
       #bar-sujo-fill { background: #ce93d8; }
+      #bar-vida-fill { background: #4caf50; }
 
       /* ── STAGE CENTRAL (personagem) ── */
       main {
@@ -169,7 +190,7 @@
       }
 
       #takematsu-img {
-        width: 200px;
+        width: 280px;
         height: auto;
         filter: drop-shadow(0 8px 18px rgba(0,0,0,0.18));
         transition: transform 0.15s ease;
@@ -493,14 +514,78 @@
         z-index: 5;
         top: -10px; right: -10px;
       }
+      #qte-container {
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(20,5,35,0.95);
+        border: 1.5px solid rgba(155,89,182,0.45);
+        border-radius: 16px;
+        padding: 20px 28px;
+        font-size: 1.2rem;
+        color: #e8d5f5;
+        text-align: center;
+        box-shadow: 0 0 40px rgba(155,89,182,0.3), inset 0 0 12px rgba(224,64,251,0.1);
+        z-index: 9999;
+      }
+      #iago {
+        position: fixed;
+        left: 50%;
+        top: 90%;
+        transform: translate(-50%, -50%);
+        z-index: 9999;
+        width: 100vw  ;
+        height: auto;
+        display: block;
+        object-fit: contain;
+        background: white;
+      }
+
+      #akira {
+        position: fixed;
+        right: 25%;
+        top: 20%;
+        width: 300px;
+        height: 500px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #sophia {
+        position: fixed;
+        left: 25%;
+        top: 20%;
+        width: 300px;
+        height: 500px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
     </style>
   </head>
-  <body>
+  <body class="background">
     <div class="cloud cloud-1"></div>
     <div class="cloud cloud-2"></div>
     <div class="cloud cloud-3"></div>
 
+    <div id="relogio">00:00:00</div>
+    <div id="qte-container" style="display:none;">
+        Aperte a tecla: <span id="target-key" style="font-weight:bold; font-size:24px;"></span>
+        <br>Tempo restante: <span id="timer">2.0</span>s
+    </div>
+    
+    <div>
+      <img src="imgs/iago_final_boss-removebg-preview.png" alt="iago" id="iago" style="display:none;">
+    </div>
+    <div>
+      <img src="imgs/akira-monster.png" alt="akira" id="akira" style="display:none;">
+    </div>
+    <div>
+      <img src="imgs/sophia_monster-removebg-preview.png" alt="sophia" id="sophia" style="display:none;">
+    </div>
 
+    <div id="medo"></div>
     <aside id="hud" role="status" aria-live="polite" aria-label="Status do Takematsu">
       <div class="stat-row">
         <span class="stat-icon">🍱</span>
@@ -516,8 +601,15 @@
           <div class="bar-fill" id="bar-sujo-fill" style="width:100%"></div>
         </div>
       </div>
+      <div class="stat-row">
+        <span class="stat-icon">❤️</span>
+        <span class="stat-label">Vida</span>
+        <div class="bar-track" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" id="bar-vida-track" aria-label="Barra de vida">
+          <div class="bar-fill" id="bar-vida-fill" style="width:100%"></div>
+        </div>
+      </div>
     </aside>
-
+  
     <main role="main" aria-label="Área principal do jogo">
       <div id="takematsu-wrap"
         class="zona-destino"
@@ -531,7 +623,10 @@
           alt="Takematsu"
           draggable="false" />
       </div>
+
     </main>
+
+    
 
     <div id="items-bar">
       <div id="comida" class="item-btn" draggable="true" role="button" tabindex="0"
@@ -563,6 +658,7 @@
     <button type="button" id="btn-a11y" aria-label="Abrir menu de acessibilidade" aria-haspopup="dialog">
       <i data-lucide="accessibility" aria-hidden="true"></i>
     </button>
+
 
     <div id="modal-overlay" class="modal-backdrop" role="dialog" aria-modal="true"
       aria-labelledby="modal-box-title" style="display: none">
