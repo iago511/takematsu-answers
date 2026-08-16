@@ -47,58 +47,6 @@ let idleFlip      = true;
 
 const som = new Audio('imgs/som.mp3');
 
-// ── QTE ─────────────────────────────────────────────────
-let qteActive = false;
-let requiredKey = 'f';
-let qteTimeout, countdownInterval;
-let timeLeft = 2.0;
-
-function startQTE() {
-    document.getElementById('qte-container').style.display = 'block';
-    qteActive = true;
-    timeLeft = 2.0;
-
-    document.getElementById('target-key').innerText = requiredKey.toUpperCase();
-    document.getElementById('timer').innerText = timeLeft.toFixed(1);
-
-    // Atualiza o visor do tempo a cada 100ms
-    countdownInterval = setInterval(() => {
-        timeLeft -= 0.1;
-        if (timeLeft > 0) {
-            document.getElementById('timer').innerText = timeLeft.toFixed(1);
-        }
-    }, 100);
-
-    // Tempo limite total (2 segundos)
-    qteTimeout = setTimeout(() => {
-        endQTE(false, 'Tempo esgotado! Você perdeu.');
-        vida = Math.max(0, vida - 20);
-        updateBarVida();
-    }, 2000);
-}
-
-document.addEventListener('keydown', (event) => {
-    if (!qteActive) return;
-
-    if (event.key.toLowerCase() === requiredKey) {
-        endQTE(true, 'Sucesso! Você agiu a tempo.');
-        vida = Math.max(0, vida + 10);
-        updateBarVida();
-    } else {
-        endQTE(false, 'Tecla errada! Você perdeu.');
-        vida = Math.max(0, vida - 20);
-        updateBarVida();
-    }
-});
-
-function endQTE(success, message) {
-    qteActive = false;
-    clearTimeout(qteTimeout);
-    clearInterval(countdownInterval);
-
-    document.getElementById('qte-container').style.display = 'none';
-}
-
 // ── IMAGE CONTROLLER ──────────────────────────────────────
 function setImg(key) {
   const src = IMGS[key] || IMGS.default1;
@@ -106,7 +54,19 @@ function setImg(key) {
   if (chatMiniImg) chatMiniImg.src = src;
 }
 // ── Reloginho ─────────────────────────────────────────────────
+// O modo sobrevivência trava o relógio nas 3 da manhã na abertura, então
+// ele precisa poder ser congelado num horário fixo.
+let relogioTravado = null;
+
+function travarRelogio(texto) { relogioTravado = texto; atualizarRelogio(); }
+function destravarRelogio()   { relogioTravado = null;  atualizarRelogio(); }
+
 function atualizarRelogio() {
+      if (relogioTravado) {
+        document.getElementById('relogio').textContent = relogioTravado;
+        return;
+      }
+
       const agora = new Date();
       let horas = agora.getHours().toString().padStart(2, '0');
       let minutos = agora.getMinutes().toString().padStart(2, '0');
@@ -127,6 +87,8 @@ function esconderEles() {
   document.getElementById('akira').style.display = 'none';
 }
 async function jumpscare(){
+  // O jogador pode desligar os sustos no popup dos minijogos.
+  if (typeof Sobrevivencia !== "undefined" && Sobrevivencia.semJumpscare()) return;
   som.play();
   document.getElementById('iago').style.display = 'block';
   await sleep(1000);
@@ -135,15 +97,26 @@ async function jumpscare(){
 function terrorTime() {
     hora = new Date().getHours();
     if (hora >= 3 && hora < 4) {
-      document.body.classList.remove("background");
-      startQTE();
+      // Antes daqui saía um classList.remove("background") que nunca era
+      // desfeito: passava das 3h e o gradiente do fundo sumia pro resto da
+      // sessão. Quem escurece a tela agora é a própria entrada do modo
+      // sobrevivência, que devolve tudo ao normal no fim.
+      // Também dá pra chamar na mão com Ctrl + Shift + 3.
+      Sobrevivencia.iniciar();
 }
 }
     setInterval(terrorTime, 10000);
     terrorTime();
 
+// Trava a expressão num frame específico (o modo sobrevivência usa isso
+// pra deixar o Takematsu com cara de "pensando" durante a abertura).
+let expressaoTravada = false;
+
+function travarExpressao(chave) { expressaoTravada = true; setImg(chave); }
+function destravarExpressao()   { expressaoTravada = false; updateIdleImg(); }
+
 function updateIdleImg() {
-  if (estaSlapando || estaBanhando || estaPensando) return;
+  if (expressaoTravada || estaSlapando || estaBanhando || estaPensando) return;
   if (vida <= 0) { setImg("morto"); return; }
   if (fome <= 30) { setImg("muitoFome"); return; }
   if (fome <= 60) { setImg("poucoFome"); return; }
@@ -168,19 +141,48 @@ function updateBarSujo() {
   else                   barSujoFill.style.background = "#ef5350";
 }
 
+let jaMorreu = false;
+
+// Morto = nada de interagir: nem tapa, nem itens, nem chat.
+function estaMorto() { return vida <= 0; }
+
+function aplicarEstadoMorto(morto) {
+  document.body.classList.toggle("takematsu-morto", morto);
+  takematsuWrap.setAttribute("aria-disabled", morto ? "true" : "false");
+  takematsuWrap.setAttribute("tabindex", morto ? "-1" : "0");
+  takematsuWrap.setAttribute("aria-label",
+    morto ? "Takematsu morto" : "Takematsu, clique para dar um tapa");
+  [comida, chuveiro].forEach(item => {
+    item.setAttribute("draggable", morto ? "false" : "true");
+    item.setAttribute("aria-disabled", morto ? "true" : "false");
+    item.setAttribute("tabindex", morto ? "-1" : "0");
+  });
+  chatInput.disabled = morto;
+  chatSend.disabled  = morto;
+  chatInput.placeholder = morto ? "O Takematsu não responde mais..." : "Manda uma pergunta...";
+}
+
 function updateBarVida() {
   barVidaFill.style.width = vida + "%";
   barVidaTrack.setAttribute("aria-valuenow", vida);
+  aplicarEstadoMorto(vida <= 0);
 
   if (vida <= 0) {
-    jumpscare();
+    // Só assusta na hora que ele morre. Sem essa trava, todo dano tomado
+    // com a vida já zerada disparava um jumpscare novo.
+    if (!jaMorreu) {
+      jaMorreu = true;
+      jumpscare();
+      showBalao("Ih, morri... socorro 😭", 3000);
+    }
     barVidaFill.style.background = "#f44336";
     setImg("morto");
-    showBalao("Ih, morri... socorro 😭", 3000);
     return;
   }
 
-  if (vida > 0) {
+  jaMorreu = false;
+
+  if (vida > 0 && !expressaoTravada) {
     setImg("default1");
   }
 
@@ -212,7 +214,7 @@ function hideBalao() {
 
 // ── SLAP ──────────────────────────────────────────────────
 takematsuWrap.addEventListener("click", async () => {
-  if (estaSlapando) return;
+  if (estaMorto() || estaSlapando) return;
   estaSlapando = true;
 
   setImg("apanhando");
@@ -242,32 +244,17 @@ takematsuWrap.addEventListener("click", async () => {
 });
 
 takematsuWrap.addEventListener("keydown", e => {
+  if (estaMorto()) return;
   if (e.key === "Enter" || e.key === " ") takematsuWrap.click();
 });
 
-// ── DRAG & DROP – FOOD ────────────────────────────────────
-comida.addEventListener("dragstart", e => {
-  e.dataTransfer.setData("text/plain", "comida");
-  comida.setAttribute("aria-grabbed", "true");
-});
-comida.addEventListener("dragend", () => comida.setAttribute("aria-grabbed", "false"));
-
-// ── DRAG & DROP – SHOWER ──────────────────────────────────
-chuveiro.addEventListener("dragstart", e => {
-  e.dataTransfer.setData("text/plain", "chuveiro");
-  chuveiro.setAttribute("aria-grabbed", "true");
-});
-chuveiro.addEventListener("dragend", () => chuveiro.setAttribute("aria-grabbed", "false"));
-
-// ── DROP ZONE ─────────────────────────────────────────────
-takematsuWrap.addEventListener("dragover", e => e.preventDefault());
-
-takematsuWrap.addEventListener("drop", async e => {
-  e.preventDefault();
-  const id = e.dataTransfer.getData("text/plain");
+// ── ITENS (sushi e chuveiro) ──────────────────────────────
+// A mesma função serve pro arrastar-e-soltar e pro teclado: os itens têm
+// role="button", então precisam responder a Enter e Espaço de verdade.
+async function usarItem(id) {
+  if (estaMorto() || estaBanhando || estaSlapando) return;
 
   if (id === "comida") {
-    if (estaBanhando || estaSlapando) return;
     fome = Math.min(100, fome + 25);
     updateBarFome();
     updateIdleImg();
@@ -282,7 +269,6 @@ takematsuWrap.addEventListener("drop", async e => {
   }
 
   if (id === "chuveiro") {
-    if (estaBanhando || estaSlapando) return;
     estaBanhando = true;
     setImg("banho");
     showBalao("Ah sim, hora do banho ✨", 3500);
@@ -311,6 +297,36 @@ takematsuWrap.addEventListener("drop", async e => {
     estaBanhando = false;
     updateIdleImg();
   }
+}
+
+[comida, chuveiro].forEach(item => {
+  const id = item.id;
+
+  item.addEventListener("dragstart", e => {
+    if (estaMorto()) { e.preventDefault(); return; }
+    e.dataTransfer.setData("text/plain", id);
+    e.dataTransfer.effectAllowed = "move";
+    item.setAttribute("aria-grabbed", "true");
+  });
+  item.addEventListener("dragend", () => item.setAttribute("aria-grabbed", "false"));
+
+  // Alternativas ao arrastar: clicar ou apertar Enter/Espaço.
+  item.addEventListener("click", () => usarItem(id));
+  item.addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); usarItem(id); }
+  });
+});
+
+// ── DROP ZONE ─────────────────────────────────────────────
+takematsuWrap.addEventListener("dragover", e => {
+  if (estaMorto()) return;
+  e.preventDefault();                     // sem isso o navegador recusa o drop
+  e.dataTransfer.dropEffect = "move";
+});
+
+takematsuWrap.addEventListener("drop", e => {
+  e.preventDefault();
+  usarItem(e.dataTransfer.getData("text/plain"));
 });
 
 // ── DRAIN TIMERS ──────────────────────────────────────────
@@ -398,6 +414,7 @@ function playTakematsuVoice(text) {
 }
 
 async function sendChat() {
+  if (estaMorto()) return;
   const q = chatInput.value.trim();
   if (!q) return;
   chatInput.value = "";

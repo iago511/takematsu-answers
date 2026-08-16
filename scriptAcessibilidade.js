@@ -20,7 +20,12 @@ const btnDecSpacing = document.getElementById("btn-dec-spacing");
 const inputTextColor = document.getElementById("input-text-color");
 const inputBgColor = document.getElementById("input-bg-color");
 
+const btnRestaurar = document.getElementById("btn-restaurar");
+
 const botoes = document.querySelectorAll(".grid-card-btn");
+
+// Onde a cor do texto é aplicada — o mesmo lugar para aplicar e para limpar.
+const SELETOR_TEXTO = "h1,h2,h3,h4,h5,h6,p,span,button,input,label,div";
 
 
 //==================================================
@@ -34,6 +39,18 @@ let imagensOcultas = false;
 let saturacao = "normal";
 
 
+// Um <input type="color"> vale "#000000" enquanto ninguém mexe nele.
+// Sem estas travas, qualquer clique no menu (mudar fonte, espaçamento…)
+// salvava as duas cores como preto, e no recarregamento o preto virava
+// style inline no body — apagando o gradiente roxo e deixando todo o
+// texto preto no preto. Só guardamos a cor que o usuário escolheu.
+let corTextoDefinida = false;
+let corFundoDefinida = false;
+
+
+const VERSAO_CONFIG = 2;
+
+
 //==================================================
 // LOCAL STORAGE
 //==================================================
@@ -43,15 +60,28 @@ function salvarConfiguracoes(){
 
     const dados = {
 
+        versao:VERSAO_CONFIG,
+
         tamanhoFonte,
         espacamento,
         imagensOcultas,
-        saturacao,
-
-        corTexto:inputTextColor.value,
-        corFundo:inputBgColor.value
+        saturacao
 
     };
+
+
+    if(corTextoDefinida){
+
+        dados.corTexto = inputTextColor.value;
+
+    }
+
+
+    if(corFundoDefinida){
+
+        dados.corFundo = inputBgColor.value;
+
+    }
 
 
     localStorage.setItem(
@@ -73,10 +103,23 @@ function carregarConfiguracoes(){
     if(!dados) return;
 
 
-    tamanhoFonte = dados.tamanhoFonte;
-    espacamento = dados.espacamento;
-    imagensOcultas = dados.imagensOcultas;
-    saturacao = dados.saturacao;
+    // Configuração salva pela versão antiga: as cores lá dentro não foram
+    // escolhidas por ninguém, eram o preto padrão do seletor. Descarta,
+    // senão o fundo continuaria preto pra quem já tem isso salvo.
+    if(dados.versao !== VERSAO_CONFIG){
+
+        delete dados.corTexto;
+        delete dados.corFundo;
+
+    }
+
+
+    // Com "??" pra aguentar configuração antiga ou incompleta: sem isso um
+    // campo faltando virava "undefined%" no font-size.
+    tamanhoFonte = dados.tamanhoFonte ?? 100;
+    espacamento = dados.espacamento ?? 0;
+    imagensOcultas = dados.imagensOcultas ?? false;
+    saturacao = dados.saturacao ?? "normal";
 
 
     aplicarFonte();
@@ -86,6 +129,7 @@ function carregarConfiguracoes(){
 
     if(dados.corTexto){
 
+        corTextoDefinida = true;
         inputTextColor.value = dados.corTexto;
         alterarCorTexto();
 
@@ -94,6 +138,7 @@ function carregarConfiguracoes(){
 
     if(dados.corFundo){
 
+        corFundoDefinida = true;
         inputBgColor.value = dados.corFundo;
         alterarCorFundo();
 
@@ -142,39 +187,66 @@ modal.addEventListener("click",(e)=>{
 
 
 //==================================================
-// ARIA PRESSED
+// ESTADO VISUAL DOS BOTÕES
 //==================================================
+//
+// Os cartões do menu são de DOIS tipos, e antes eram tratados como um só:
+//
+//   AÇÃO   — fonte e espaçamento. Cada clique muda um valor; não existe
+//            "ligado". Acender isso não quer dizer nada.
+//   ESTADO — esconder imagens e as duas saturações. Ligam/desligam algo,
+//            então podem (e devem) acender.
+//
+// O código antigo tinha UM listener que acendia todos no clique, sem olhar
+// o valor real. Isso causava quatro problemas de uma vez:
+//   • "Alta" e "Baixa" saturação ficavam acesas ao mesmo tempo, mesmo com
+//     só uma valendo (a variável `saturacao` guarda um valor só);
+//   • os botões de ação piscavam a cada clique sem significado — e o
+//     aria-pressed mentia pro leitor de tela;
+//   • ao recarregar a página, o efeito voltava aplicado mas nenhum botão
+//     acendia (o estado vinha do localStorage, sem clique nenhum);
+//   • os seletores de cor são <label>, não botão, e ganhavam aria-pressed.
+//
+// A correção é ter UMA função que pinta os botões a partir do estado real,
+// chamada depois de qualquer mudança. A tela nunca inventa: ela só reflete.
 
 
-botoes.forEach((botao)=>{
+const BOTOES_ESTADO = [
 
-    if(!botao.hasAttribute("aria-pressed")){
+    { el: btnToggleImages, ligado: ()=> imagensOcultas },
+    { el: btnHighSat,      ligado: ()=> saturacao === "alta" },
+    { el: btnLowSat,       ligado: ()=> saturacao === "baixa" }
 
-        botao.setAttribute(
-            "aria-pressed",
-            "false"
-        );
-
-    }
+];
 
 
-    botao.addEventListener("click",()=>{
-
-        const ativo = botao.classList.toggle(
-            "is-active"
-        );
+function sincronizarBotoes(){
 
 
-        botao.setAttribute(
+    // Apaga tudo primeiro: assim os cartões de ação e os <label> de cor
+    // nunca ficam com sobra de estado.
+    botoes.forEach((botao)=>{
 
-            "aria-pressed",
-            ativo ? "true":"false"
-
-        );
+        botao.classList.remove("is-active");
+        botao.removeAttribute("aria-pressed");
 
     });
 
-});
+
+    // E acende só o que está realmente ligado.
+    BOTOES_ESTADO.forEach(({ el, ligado })=>{
+
+        if(!el) return;
+
+        const on = ligado();
+
+        el.classList.toggle("is-active", on);
+        el.setAttribute("aria-pressed", on ? "true" : "false");
+
+    });
+
+
+}
 
 
 
@@ -279,11 +351,7 @@ btnDecSpacing.addEventListener("click",()=>{
 function alterarCorTexto(){
 
 
-    const elementos = document.querySelectorAll(
-
-        "h1,h2,h3,h4,h5,h6,p,span,button,input,label,div"
-
-    );
+    const elementos = document.querySelectorAll(SELETOR_TEXTO);
 
 
     elementos.forEach((el)=>{
@@ -302,7 +370,12 @@ function alterarCorTexto(){
 inputTextColor.addEventListener(
 
     "input",
-    alterarCorTexto
+    ()=>{
+
+        corTextoDefinida = true;
+        alterarCorTexto();
+
+    }
 
 );
 
@@ -330,7 +403,12 @@ function alterarCorFundo(){
 inputBgColor.addEventListener(
 
     "input",
-    alterarCorFundo
+    ()=>{
+
+        corFundoDefinida = true;
+        alterarCorFundo();
+
+    }
 
 );
 
@@ -376,6 +454,10 @@ function aplicarSaturacao(){
 
 
 
+// As duas saturações mexem na MESMA variável, então são naturalmente
+// exclusivas: escolher "alta" já desliga "baixa". Quem garante que a tela
+// mostra isso é o sincronizarBotoes().
+
 btnHighSat.addEventListener("click",()=>{
 
 
@@ -388,6 +470,7 @@ btnHighSat.addEventListener("click",()=>{
 
 
     aplicarSaturacao();
+    sincronizarBotoes();
     salvarConfiguracoes();
 
 
@@ -407,6 +490,7 @@ btnLowSat.addEventListener("click",()=>{
 
 
     aplicarSaturacao();
+    sincronizarBotoes();
     salvarConfiguracoes();
 
 
@@ -477,10 +561,84 @@ btnToggleImages.addEventListener("click",()=>{
     }
 
 
+    sincronizarBotoes();
     salvarConfiguracoes();
 
 
 });
+
+
+
+
+//==================================================
+// RESTAURAR PADRÃO
+//==================================================
+//
+// As preferências ficam no localStorage, que é preso ao endereço do site —
+// então elas sobrevivem a reiniciar o Live Server, fechar o navegador e
+// até trocar de dia. Isso é de propósito (ninguém quer reconfigurar a
+// acessibilidade toda vez), mas sem uma saída o jogador ficava preso: era
+// só isso que faltava.
+
+
+function limparCorTexto(){
+
+    document.querySelectorAll(SELETOR_TEXTO)
+
+    .forEach((el)=>{ el.style.color = ""; });
+
+}
+
+
+
+function restaurarPadrao(){
+
+
+    tamanhoFonte = 100;
+    espacamento = 0;
+    imagensOcultas = false;
+    saturacao = "normal";
+
+    corTextoDefinida = false;
+    corFundoDefinida = false;
+
+
+    aplicarFonte();
+    aplicarEspacamento();
+    aplicarSaturacao();
+    mostrarImagens();
+
+    limparCorTexto();
+    document.body.style.background = "";   // o gradiente da classe volta
+
+    inputTextColor.value = "#000000";
+    inputBgColor.value = "#000000";
+
+
+    sincronizarBotoes();
+
+
+    try{
+
+        localStorage.removeItem("takematsuA11Y");
+
+    }
+    catch(e){
+
+        console.warn("Não deu pra limpar as configurações salvas.", e);
+
+    }
+
+
+}
+
+
+
+if(btnRestaurar){
+
+    btnRestaurar.addEventListener("click", restaurarPadrao);
+
+}
 
 
 
@@ -513,5 +671,9 @@ document.addEventListener("keydown",(e)=>{
 window.addEventListener("load",()=>{
 
     carregarConfiguracoes();
+
+    // Pinta os botões conforme o que foi carregado. Sem isto, o efeito
+    // voltava aplicado mas os botões apareciam todos apagados.
+    sincronizarBotoes();
 
 });

@@ -56,6 +56,213 @@ Essa mecânica utiliza JavaScript para verificar o horário e realizar alteraç�
 
 ---
 
+## Modo Sobrevivência
+
+A partir do modo terror, o jogo deixa de ser um simulador de bichinho e vira uma
+sessão de **minijogos rápidos no estilo WarioWare**: instruções curtas, poucos
+segundos cada, ficando mais rápido a cada onda.
+
+* **4 vidas.** Cada erro custa 1 vida e 20 de HP; cada acerto vale 100 pontos e devolve 5 de HP.
+* **5 ondas de 4 minijogos.** A velocidade sobe 15% por onda.
+* Ficar sem vidas é a morte do Takematsu. Sobreviver às 5 ondas devolve o controle ao jogador.
+
+### Os minijogos
+
+Cada um simula uma **barreira real de acessibilidade**:
+
+| Minijogo    | Barreira                                                        |
+| ----------- | --------------------------------------------------------------- |
+| `LEGENDE!`  | Vídeo sem legenda — ative a legenda na hora certa                 |
+| `ENXERGUE!` | Contraste insuficiente — ache o único texto que passa nos 4.5:1   |
+| `NAVEGUE!`  | Elementos sem rótulo — só um tem nome para o leitor de tela       |
+| `ESCUTE!`   | Navegação às cegas — obedeça o leitor de tela sem apoio visual    |
+| `DESCREVA!` | Texto alternativo — escolha o `alt` que descreve mesmo a imagem   |
+| `RAMPA!`    | Degrau sem rampa — solte a rampa antes de a cadeira chegar        |
+| `PAUSE!`    | Conteúdo piscante — pause a animação o mais rápido possível       |
+
+### O ritmo entre rodadas
+
+O ciclo do WarioWare, com o fundo da tela principal nas duas telas:
+
+```
+  reação (2,4s)  →  anúncio do próximo (2,4s)  →  minijogo  →  reação  →  …
+```
+
+**Reação** — o Takematsu responde ao que acabou de acontecer, com os corações
+logo abaixo dele (o que acabou de cair apaga com animação):
+
+| Situação           | Takematsu             | Animação       | Elenco em cena          |
+| ------------------ | --------------------- | -------------- | ----------------------- |
+| Acertou            | `takematsu-falando-1` | estica/encolhe | quem já tiver aparecido |
+| 1º coração perdido | `takematsu-apanhando` | parado         | —                       |
+| 2º coração perdido | `takematsu-apanhando` | parado         | **Sophia** entra pela esquerda |
+| 3º coração perdido | `takematsu-apanhando` | parado         | Sophia + **Akira** entra pela direita |
+| 4º e último        | `takematsu-morto`     | parado         | Sophia + Akira, e o jumpscare |
+
+**Os monstros não vão embora.** Uma vez que aparecem, ficam em todas as
+intermissões seguintes — inclusive nas de acerto. Só o recém-chegado faz a
+entrada correndo (com a risada); os que já estavam só continuam flutuando, em
+ritmos diferentes pra não balançarem em bloco.
+
+**Anúncio** — o `takematsu-falando-2` entra com a animação de estica/encolhe,
+e ao mesmo tempo aparecem o verbo do minijogo, a explicação e a tecla.
+
+As duas telas usam a **mesma grade de três linhas**, com o personagem sempre na
+linha do meio: ele não muda de lugar na troca, então a sequência parece uma cena
+contínua em vez de dois cartões separados.
+
+**Virada de onda** — no lugar do anúncio comum entra a tela de *speed up*:
+"MAIS RÁPIDO!", com o personagem animando mais rápido.
+
+**Os personagens dançam no ritmo.** A duração de cada tela é dividida num número
+inteiro de passos (perto de 420 ms cada) e escrita na variável `--mj-danca`.
+Assim o passo fecha junto com o jingle em vez de flutuar solto. Os dois monstros
+usam o mesmo compasso, com meio tempo de defasagem entre eles.
+
+### A aceleração
+
+Cada onda aumenta a velocidade do jogo em 26%:
+
+| Onda | Velocidade | Minijogo | Barra começa em | Música |
+| ---- | ---------- | -------- | --------------- | ------ |
+| 1    | 1,00×      | 4200 ms  | 100%            | 1,00×  |
+| 2    | 1,26×      | 3333 ms  | 79%             | 1,10×  |
+| 3    | 1,52×      | 2763 ms  | 66%             | 1,20×  |
+| 4    | 1,78×      | 2360 ms  | 56%             | 1,20×  |
+| 5    | 2,04×      | 2059 ms  | 49%             | 1,20×  |
+
+Dois detalhes fazem a aceleração ser **vista**, não só medida:
+
+* **A barra de tempo mede tempo absoluto.** Antes ela começava sempre cheia e
+  esvaziava na duração da rodada — o desenho ficava idêntico em toda onda e
+  escondia o minijogo ficando mais curto. Agora a onda 5 já começa com meia
+  barra.
+* **A música acompanha só de leve** (`playbackRate` até 1,20×, com
+  `preservesPitch = false` pro tom subir junto). Seguir a velocidade cheia
+  deixava os jingles esganiçados; quem tem que ficar rápido é o jogo.
+
+### Entrada no modo
+
+O **relógio é o gatilho da cena**:
+
+1. Ele ganha destaque e começa a pulsar, aceso acima de tudo, e o Takematsu
+   troca pro frame `pensando-reposta` — ele percebe antes do jogador;
+2. Os dígitos embaralham por ~0,7 s e **travam em 03:00:00** (pelo atalho de
+   demonstração; às 3h de verdade ele já está lá);
+3. No **mesmo instante** em que o relógio crava 3 da manhã, a **risada do
+   monstro** entra alta e a tela em volta é **engolida** na
+   duração exata do áudio — chat, itens, HUD e o Takematsu somem com desfoque
+   enquanto um véu escuro se fecha do centro pra fora, com o relógio ainda
+   aceso no meio da escuridão;
+4. Aí aparece o popup de configuração. Ao começar, o modo entra de uma vez.
+
+A duração do escurecimento não é um número no CSS: o JS escreve a duração da
+risada na variável `--mj-engole`, e a transição a usa. Trocar o arquivo muda a
+animação junto.
+
+No fim da sessão (ou se o jogador escolher "Agora não") o véu abre, o relógio
+destrava e volta ao horário real, e tudo reaparece.
+
+### Som
+
+Os jingles ficam em `jingles/`, e **a música não para entre uma tela e outra**.
+
+#### Os arquivos têm silêncio no fim
+
+Todo arquivo da pasta traz cerca de **1,3 s de silêncio no fim** (sobra da
+exportação). Por isso cada jingle tem duas durações no código:
+
+| Jingle              | Arquivo   | Só o som  |
+| ------------------- | --------- | --------- |
+| `Intro` / `Jingle`  | 3135 ms   | 1829 ms   |
+| `Win` / `Lose`      | 3161 ms   | 1881 ms   |
+| `SpeedUp`           | 4885 ms   | 3605 ms   |
+| `GameOver`          | 3814 ms   | 2508 ms   |
+| `RisadaMonstro`     | 3579 ms   | 2273 ms   |
+| `NICE_ONE`          | 27089 ms  | 25783 ms  |
+| `doom`              | 167758 ms | 166426 ms |
+
+**As telas usam a coluna "só o som".** Usar a duração do arquivo deixava cada
+intervalo parado no mudo por 1,3 s — e nas faixas em loop dava um buraco a cada
+volta, então o loop também reinicia no fim do som, não do arquivo.
+
+> Se algum arquivo for trocado, esses números precisam ser remedidos. Frames de
+> MP3 Layer III em silêncio gastam quase nenhum bit (`part2_3_length` ≈ 0), então
+> dá pra achar o último frame com som varrendo o bitstream. O código avisa no
+> console se a duração do arquivo não bater com a tabela.
+
+O truque são os arquivos `_com_`: cada um é o sting de reação já colado no jingle
+seguinte, então **um arquivo cobre duas telas**. O jogo toca o emendado e troca de
+tela no ponto exato da emenda:
+
+| Arquivo                  | Tela 1 (reação)      | Tela 2                  |
+| ------------------------ | -------------------- | ----------------------- |
+| `Intro_com_Jingle.mp3`   | abertura ~1,7 s      | 1º anúncio ~3,1 s       |
+| `Win_com_Jingle.mp3`     | acerto ~1,75 s       | anúncio ~3,1 s          |
+| `Lose_com_Jingle.mp3`    | erro ~1,8 s          | anúncio ~3,1 s          |
+| `SpeedUp_com_Win.mp3`    | acerto ~1,7 s        | virada de onda ~4,9 s   |
+| `SpeedUp_com_Lose.mp3`   | erro ~1,7 s          | virada de onda ~4,9 s   |
+
+O ponto da emenda **não é um número fixo no código** — sai de uma subtração:
+
+```
+emenda = duração(arquivo emendado) − duração(jingle que vem depois)
+```
+
+Como as durações são lidas dos próprios arquivos em tempo de execução, reexportar
+qualquer jingle reajusta o corte sozinho.
+
+Os arquivos soltos entram onde não existe emendado: `Jingle.mp3` no anúncio logo
+após a virada de onda, `Win.mp3`/`Lose.mp3` na última reação da sessão (cortada no
+fim do som, sem o silêncio que sobra no arquivo), `GameOver.mp3` na derrota e
+`RisadaMonstro.mp3` quando um monstro chega — essa a 30% do volume, pra não
+encobrir o resto, e deixada tocar por cima da tela seguinte de propósito.
+
+### As telas de fim
+
+**Vitória** — o Takematsu dança à esquerda com os corações embaixo dele, e o
+placar fica à direita: acertos, erros, ondas, pontos e uma **nota** (S a D, pela
+proporção de acertos). `NICE_ONE.mp3` toca em loop até o jogador apertar qualquer
+tecla ou clicar em qualquer lugar pra voltar à tela inicial.
+
+**Derrota** — depois do `GameOver.mp3`, o jogo volta à tela inicial com o
+Takematsu morto e `doom.mp3` fica rodando em loop, até alguém começar outra
+sessão.
+
+Abrir o modo e escolher "Agora não" com o Takematsu morto **retoma o `doom`** —
+senão a tela inicial ficava muda pra sempre.
+
+Cada jingle toca **uma vez só** por tela. Se o jogador esticou o intervalo (mais
+tempo ou "intervalos maiores"), o fim da tela fica em silêncio mesmo — repetir a
+música pra preencher ficava pior de ouvir.
+
+### Só três teclas
+
+Todos os minijogos usam **apenas três ações lógicas**: `anterior`, `próximo` e
+`confirmar`. Nada de mouse, arrastar ou tecla exclusiva de um jogo. Isso permite
+remapear uma vez e valer para a sessão inteira — inclusive no **modo de duas
+teclas**, que é como funciona a varredura por acionador (*switch access*) usada
+por quem tem mobilidade reduzida.
+
+### Popup de configuração
+
+Antes de a sessão começar (e a qualquer momento com <kbd>Esc</kbd>) aparece um
+popup para o jogador ajustar:
+
+* **Tempo** — de 0,75× a 2× a duração de cada minijogo, travar a aceleração entre
+  ondas, e **intervalos maiores** (+1,8 s só na tela de explicação, que é a que
+  precisa ser lida);
+* **Visual** — alto contraste, reduzir animações e desligar os sustos;
+* **Teclas** — presets (setas, A/D, duas teclas) ou remapear cada ação individualmente;
+* **Áudio** — narrar as instruções com `SpeechSynthesis` em pt-BR e efeitos sonoros.
+
+As preferências ficam salvas no `localStorage`. Pausar **cancela a rodada em
+andamento sem contar acerto nem erro** — precisar parar nunca é punido.
+
+> **Para demonstrar sem esperar as 3h:** <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>3</kbd>.
+
+---
+
 ## Acessibilidade
 
 A acessibilidade é uma das partes importantes do projeto.
@@ -125,12 +332,58 @@ takematsu-answers/
 ├── package.json
 ├── package-lock.json
 │
+├── jingles/
+│   └── Trilha sonora do modo sobrevivência
+│
+├── testes/
+│   └── rodarTestes.cjs
+│
 ├── script.js
 ├── scriptAcessibilidade.js
 ├── scriptAgente.js
 │
+├── scriptJingles.js          ← modo sobrevivência, camada 1
+├── scriptConfigJogo.js       ← camada 2
+├── scriptSobrevivencia.js    ← camada 3
+├── scriptMinijogos.js        ← camada 4
+│
 └── README.md
 ```
+
+### O modo sobrevivência é dividido em camadas
+
+Cada arquivo tem **um trabalho só**, e cada um usa apenas o de cima. Dá pra
+ler na ordem, de baixo pra cima:
+
+| Arquivo                  | O que faz                                            | Usa |
+| ------------------------ | ---------------------------------------------------- | --- |
+| `scriptJingles.js`       | Só toca som. Não sabe o que é onda nem minijogo.      | — |
+| `scriptConfigJogo.js`    | Preferências, popup e teclado. Traduz tecla em ação.  | Jingles |
+| `scriptSobrevivencia.js` | As telas, a rodada e o loop da sessão.                | Jingles, ConfigJogo |
+| `scriptMinijogos.js`     | Os 7 minijogos, que se registram no motor.            | Sobrevivencia |
+
+A ordem das tags `<script>` no `index.html` segue exatamente essa lista.
+
+Cada minijogo recebe um objeto `ctx` com tudo que pode usar — e só com isso.
+Nenhum minijogo mexe direto no DOM da página nem no estado da sessão, o que
+deixa fácil escrever um novo sem quebrar o resto.
+
+---
+
+## Testes automáticos
+
+O projeto tem uma suíte que abre o `index.html` de verdade num navegador de
+mentira (jsdom), **joga sozinha** e confere o resultado:
+
+```bash
+npm install
+npm test
+```
+
+São 9 testes com 51 checagens: carregamento das camadas, abertura do modo,
+uma sessão inteira ganhando, uma inteira perdendo, o estado de morte, os itens
+pelo teclado, a pausa, a proteção do gradiente do fundo e a montagem dos 7
+minijogos.
 
 ---
 
@@ -168,7 +421,12 @@ Abra o `index.html` no navegador ou utilize uma extensão como **Live Server** n
 | `script.js`               | Lógica e funcionamento principal do jogo      |
 | `scriptAcessibilidade.js` | Funcionalidades relacionadas à acessibilidade |
 | `scriptAgente.js`         | Implementação do agente                       |
-| `imgs/`                   | Imagens utilizadas na aplicação               |
+| `scriptJingles.js`        | Modo sobrevivência ①: toca a trilha sonora    |
+| `scriptConfigJogo.js`     | Modo sobrevivência ②: preferências, popup e teclado |
+| `scriptSobrevivencia.js`  | Modo sobrevivência ③: telas, rodada e loop da sessão |
+| `scriptMinijogos.js`      | Modo sobrevivência ④: os 7 minijogos          |
+| `testes/rodarTestes.cjs`  | Suíte automática (`npm test`)                 |
+| `imgs/` e `jingles/`      | Imagens e áudio usados na aplicação           |
 | `package.json`            | Configurações e dependências do projeto       |
 
 ---
