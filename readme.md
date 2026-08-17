@@ -380,10 +380,74 @@ npm install
 npm test
 ```
 
-São 9 testes com 51 checagens: carregamento das camadas, abertura do modo,
+São 10 testes com 67 checagens: carregamento das camadas, abertura do modo,
 uma sessão inteira ganhando, uma inteira perdendo, o estado de morte, os itens
-pelo teclado, a pausa, a proteção do gradiente do fundo e a montagem dos 7
-minijogos.
+pelo teclado, a pausa, a proteção do gradiente do fundo, o menu de
+acessibilidade e a montagem dos 7 minijogos.
+
+### Teste de responsividade
+
+O jsdom **não calcula layout** — ele não sabe dizer se algo saiu da tela. Então
+há um segundo teste, que abre a página no Chrome (ou Edge) de verdade:
+
+```bash
+npm run test:layout
+```
+
+Ele mede 8 cenas em 7 tamanhos de tela e reprova se: a página rolar na
+horizontal, algum elemento sair da tela, os painéis da tela inicial se
+sobrepuserem, ou os blocos de opção ficarem na orientação errada.
+
+> Ao medir o Takematsu, o teste usa só a faixa dos 18% aos 72% da altura da
+> imagem: o PNG é 340×733 mas o desenho ocupa pouco mais da metade disso, e
+> encostar na parte transparente não é problema. Sem esse cuidado o teste
+> mandaria encolher o personagem à toa.
+
+---
+
+## Responsividade
+
+Três pontos de virada, cada um resolvendo um problema diferente:
+
+| Condição              | O que muda                                            |
+| --------------------- | ----------------------------------------------------- |
+| largura ≤ 900px       | **os minijogos viram na vertical** — as opções passam a ficar uma embaixo da outra, em largura cheia |
+| largura ≤ 620px       | a tela inicial se reorganiza: os itens saem da coluna da esquerda e viram uma **linha acima do chat**, e o HUD desce pra não brigar com o relógio |
+| altura ≤ 520px        | tudo comprime: reservas, personagens e os textos das telas de transição |
+
+Os dois últimos são independentes de propósito: um **celular deitado** é largo
+*e* baixo, e precisa das duas correções ao mesmo tempo. Aliás, nele as opções
+**voltam** a ficar lado a lado — sobra largura e falta altura, então empilhar
+seria a escolha errada.
+
+### O tamanho do Takematsu
+
+Ele não é um número fixo: o `<main>` reserva por `padding` o espaço do HUD e do
+chat, e a altura da imagem sai de um `min()` entre o espaço livre e o teto de
+largura. Cresce junto com a tela.
+
+O detalhe que faz diferença é o **×1.5**. Só ~54% do PNG é o desenho — o resto é
+margem transparente. Então a *caixa* precisa ser maior que o espaço livre pro
+*personagem* ocupá-lo de verdade; a sobra transparente passa por cima do HUD e
+do chat, onde não há pixel nenhum pra atrapalhar.
+
+De onde vem o 1.5: a margem é assimétrica (18% em cima, 28% embaixo), então quem
+aperta é o topo. Pra cabeça não invadir o HUD, `0,32 · altura ≤ espaço/2`, ou
+seja `altura ≤ 1,5625 · espaço`. O 1.5 deixa uma folga.
+
+Resultado medido — antes o personagem ocupava 30% da altura numa tela de 1080p:
+
+| Tela        | Personagem visível |
+| ----------- | ------------------ |
+| 1920×1080   | 52% da altura      |
+| 1366×768    | 40%                |
+| 768×1024    | 50%                |
+| 390×844     | 32%                |
+| 740×360     | 29%                |
+
+As reservas de espaço de cada breakpoint foram **medidas no navegador**, não
+chutadas. E a barra de itens no celular é ancorada na altura do chat, não na
+reserva — senão uma dependeria da outra e a conta nunca fecharia.
 
 ---
 
@@ -426,6 +490,7 @@ Abra o `index.html` no navegador ou utilize uma extensão como **Live Server** n
 | `scriptSobrevivencia.js`  | Modo sobrevivência ③: telas, rodada e loop da sessão |
 | `scriptMinijogos.js`      | Modo sobrevivência ④: os 7 minijogos          |
 | `testes/rodarTestes.cjs`  | Suíte automática (`npm test`)                 |
+| `testes/testeLayout.cjs`  | Teste de responsividade (`npm run test:layout`) |
 | `imgs/` e `jingles/`      | Imagens e áudio usados na aplicação           |
 | `package.json`            | Configurações e dependências do projeto       |
 
